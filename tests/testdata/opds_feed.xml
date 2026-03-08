@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dc="http://purl.org/dc/terms/"
+      xmlns:opds="https://specs.opds.io/opds-1.2"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <id>00000000-0000-0000-0000-000000000001</id>
+
+  <link rel="self"
+        href="/catalog/v2/entries?count=500&start=0"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start"
+        href="/catalog/v2/root.xml"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="up"
+        href="/catalog/v2/root.xml"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+
+  <title>All Entries</title>
+  <updated>2025-01-01T00:00:00Z</updated>
+  <totalResults>39</totalResults>
+  <startIndex>0</startIndex>
+  <itemsPerPage>39</itemsPerPage>
+
+  <!-- entry 1: jq Docs — used by entity-decode test and filtered fixture -->
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000101</id>
+    <title>jq Docs</title>
+    <updated>2025-10-06T00:00:00Z</updated>
+    <summary>jq documentation, by DevDocs</summary>
+    <language>eng</language>
+    <name>devdocs_en_jq</name>
+    <flavour></flavour>
+    <category>devdocs</category>
+    <tags>_ftindex:no</tags>
+    <articleCount>1</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/devdocs_en_jq_2025-10" />
+    <author><name>DevDocs</name></author>
+    <dc:issued>2025-10-06T00:00:00Z</dc:issued>
+  </entry>
+
+  <!-- entry 2: entity decode test — title with &amp; -->
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000102</id>
+    <title>3D Printing Q&amp;A</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Questions and answers about 3D printing</summary>
+    <language>eng</language>
+    <name>3dprinting.stackexchange.com_en_all</name>
+    <flavour></flavour>
+    <category>stack_exchange</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>42000</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/3dprinting.stackexchange.com_en_all_2025-01" />
+    <author><name>Stack Exchange</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+
+  <!-- entry 3: entity decode test — summary with &apos; -->
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000103</id>
+    <title>ExplainXKCD</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>It&apos;s &apos;cause you&apos;re dumb</summary>
+    <language>eng</language>
+    <name>explainxkcd_en_all</name>
+    <flavour></flavour>
+    <category>other</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>3000</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/explainxkcd_en_all_2025-01" />
+    <author><name>ExplainXKCD contributors</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+
+  <!-- entries 4-39: generic synthetic books to reach total of 39 -->
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000104</id>
+    <title>Example Docs 04</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 04</summary>
+    <language>eng</language>
+    <name>example_en_book04</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book04_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000105</id>
+    <title>Example Docs 05</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 05</summary>
+    <language>eng</language>
+    <name>example_en_book05</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book05_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000106</id>
+    <title>Example Docs 06</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 06</summary>
+    <language>eng</language>
+    <name>example_en_book06</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book06_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000107</id>
+    <title>Example Docs 07</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 07</summary>
+    <language>eng</language>
+    <name>example_en_book07</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book07_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000108</id>
+    <title>Example Docs 08</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 08</summary>
+    <language>eng</language>
+    <name>example_en_book08</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book08_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000109</id>
+    <title>Example Docs 09</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 09</summary>
+    <language>eng</language>
+    <name>example_en_book09</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book09_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000110</id>
+    <title>Example Docs 10</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 10</summary>
+    <language>eng</language>
+    <name>example_en_book10</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book10_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000111</id>
+    <title>Example Docs 11</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 11</summary>
+    <language>eng</language>
+    <name>example_en_book11</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book11_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000112</id>
+    <title>Example Docs 12</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 12</summary>
+    <language>eng</language>
+    <name>example_en_book12</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book12_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000113</id>
+    <title>Example Docs 13</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 13</summary>
+    <language>eng</language>
+    <name>example_en_book13</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book13_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000114</id>
+    <title>Example Docs 14</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 14</summary>
+    <language>eng</language>
+    <name>example_en_book14</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book14_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000115</id>
+    <title>Example Docs 15</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 15</summary>
+    <language>eng</language>
+    <name>example_en_book15</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book15_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000116</id>
+    <title>Example Docs 16</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 16</summary>
+    <language>eng</language>
+    <name>example_en_book16</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book16_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000117</id>
+    <title>Example Docs 17</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 17</summary>
+    <language>eng</language>
+    <name>example_en_book17</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book17_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000118</id>
+    <title>Example Docs 18</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 18</summary>
+    <language>eng</language>
+    <name>example_en_book18</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book18_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000119</id>
+    <title>Example Docs 19</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 19</summary>
+    <language>eng</language>
+    <name>example_en_book19</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book19_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000120</id>
+    <title>Example Docs 20</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 20</summary>
+    <language>eng</language>
+    <name>example_en_book20</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book20_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000121</id>
+    <title>Example Docs 21</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 21</summary>
+    <language>eng</language>
+    <name>example_en_book21</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book21_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000122</id>
+    <title>Example Docs 22</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 22</summary>
+    <language>eng</language>
+    <name>example_en_book22</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book22_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000123</id>
+    <title>Example Docs 23</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 23</summary>
+    <language>eng</language>
+    <name>example_en_book23</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book23_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000124</id>
+    <title>Example Docs 24</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 24</summary>
+    <language>eng</language>
+    <name>example_en_book24</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book24_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000125</id>
+    <title>Example Docs 25</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 25</summary>
+    <language>eng</language>
+    <name>example_en_book25</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book25_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000126</id>
+    <title>Example Docs 26</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 26</summary>
+    <language>eng</language>
+    <name>example_en_book26</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book26_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000127</id>
+    <title>Example Docs 27</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 27</summary>
+    <language>eng</language>
+    <name>example_en_book27</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book27_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000128</id>
+    <title>Example Docs 28</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 28</summary>
+    <language>eng</language>
+    <name>example_en_book28</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book28_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000129</id>
+    <title>Example Docs 29</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 29</summary>
+    <language>eng</language>
+    <name>example_en_book29</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book29_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000130</id>
+    <title>Example Docs 30</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 30</summary>
+    <language>eng</language>
+    <name>example_en_book30</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book30_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000131</id>
+    <title>Example Docs 31</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 31</summary>
+    <language>eng</language>
+    <name>example_en_book31</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book31_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000132</id>
+    <title>Example Docs 32</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 32</summary>
+    <language>eng</language>
+    <name>example_en_book32</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book32_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000133</id>
+    <title>Example Docs 33</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 33</summary>
+    <language>eng</language>
+    <name>example_en_book33</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book33_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000134</id>
+    <title>Example Docs 34</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 34</summary>
+    <language>eng</language>
+    <name>example_en_book34</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book34_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000135</id>
+    <title>Example Docs 35</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 35</summary>
+    <language>eng</language>
+    <name>example_en_book35</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book35_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000136</id>
+    <title>Example Docs 36</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 36</summary>
+    <language>eng</language>
+    <name>example_en_book36</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book36_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000137</id>
+    <title>Example Docs 37</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 37</summary>
+    <language>eng</language>
+    <name>example_en_book37</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book37_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000138</id>
+    <title>Example Docs 38</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 38</summary>
+    <language>eng</language>
+    <name>example_en_book38</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book38_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000139</id>
+    <title>Example Docs 39</title>
+    <updated>2025-01-01T00:00:00Z</updated>
+    <summary>Synthetic test book 39</summary>
+    <language>eng</language>
+    <name>example_en_book39</name>
+    <flavour></flavour>
+    <category>example</category>
+    <tags>_ftindex:yes</tags>
+    <articleCount>100</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/example_en_book39_2025-01" />
+    <author><name>Example Author</name></author>
+    <dc:issued>2025-01-01T00:00:00Z</dc:issued>
+  </entry>
+</feed>

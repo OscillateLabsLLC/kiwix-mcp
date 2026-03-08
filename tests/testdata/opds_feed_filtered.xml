@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dc="http://purl.org/dc/terms/"
+      xmlns:opds="https://specs.opds.io/opds-1.2"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <id>00000000-0000-0000-0000-000000000002</id>
+
+  <link rel="self"
+        href="/catalog/v2/entries?count=500&q=jq&start=0"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start"
+        href="/catalog/v2/root.xml"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="up"
+        href="/catalog/v2/root.xml"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+
+  <title>Filtered Entries</title>
+  <updated>2025-01-01T00:00:00Z</updated>
+  <totalResults>1</totalResults>
+  <startIndex>0</startIndex>
+  <itemsPerPage>1</itemsPerPage>
+
+  <entry>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000101</id>
+    <title>jq Docs</title>
+    <updated>2025-10-06T00:00:00Z</updated>
+    <summary>jq documentation, by DevDocs</summary>
+    <language>eng</language>
+    <name>devdocs_en_jq</name>
+    <flavour></flavour>
+    <category>devdocs</category>
+    <tags>_ftindex:no</tags>
+    <articleCount>1</articleCount>
+    <mediaCount>0</mediaCount>
+    <link type="text/html" href="/devdocs_en_jq_2025-10" />
+    <author><name>DevDocs</name></author>
+    <dc:issued>2025-10-06T00:00:00Z</dc:issued>
+  </entry>
+</feed>
