@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "kiwix-mcp"
 version = "1.0.0"
 description = "MCP server and client library for Kiwix HTTP servers"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.27",
     "mcp>=1.26",
