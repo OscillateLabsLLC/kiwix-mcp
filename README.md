@@ -10,6 +10,7 @@ MCP server and Python client library for [Kiwix](https://kiwix.org) HTTP servers
 Tested against **kiwix-tools** (Debian `bookworm` package) and newer **libkiwix**-based deployments. Any standard `kiwix-serve` deployment should work.
 
 Known quirks handled transparently:
+
 - kiwix-serve emits unescaped `&` in OPDS catalog `href` attributes
 - Newer servers require a book scope when the library spans multiple languages — the client returns a clear error with instructions in that case
 - Newer servers use a path-prefixed URL scheme (e.g. `/kiwix/content/book_slug`) — slug and article URL handling adapts automatically
@@ -60,7 +61,7 @@ Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_conf
 Claude Code — add at user scope so it's available in all projects:
 
 ```bash
-claude mcp add --scope user kiwix --transport sse http://localhost:7474/sse
+claude mcp add --scope user --transport http kiwix https://your-kiwix-mcp-host/mcp/
 ```
 
 ### SSE
@@ -69,7 +70,7 @@ claude mcp add --scope user kiwix --transport sse http://localhost:7474/sse
 kiwix-mcp --transport sse --base-url http://localhost:8080
 ```
 
-Then point your MCP client at `http://localhost:8080/sse`.
+Then point your MCP client at `http://localhost:8000/sse`.
 
 ### HTTP (streamable)
 
@@ -77,12 +78,36 @@ Then point your MCP client at `http://localhost:8080/sse`.
 kiwix-mcp --transport streamable-http --base-url http://localhost:8080
 ```
 
+Then point your MCP client at `http://localhost:8000/mcp`.
+
+### Docker
+
+```bash
+docker run -e KIWIX_BASE_URL=http://your-kiwix-server:8080 \
+  -p 8000:8000 \
+  oscillatelabs/kiwix-mcp
+```
+
+Defaults to `streamable-http` transport bound on `0.0.0.0:8000`. Override with env vars:
+
+```bash
+docker run \
+  -e KIWIX_BASE_URL=http://your-kiwix-server:8080 \
+  -e TRANSPORT=sse \
+  -e HOST=0.0.0.0 \
+  -e PORT=8000 \
+  -p 8000:8000 \
+  oscillatelabs/kiwix-mcp
+```
+
 ## Options
 
-| Flag            | Default   | Env              |
-| --------------- | --------- | ---------------- |
-| `--base-url`    | —         | `KIWIX_BASE_URL` |
-| `--transport`   | `stdio`   | —                |
+| Flag          | Default     | Env              |
+| ------------- | ----------- | ---------------- |
+| `--base-url`  | —           | `KIWIX_BASE_URL` |
+| `--transport` | `stdio`     | `TRANSPORT`      |
+| `--host`      | `127.0.0.1` | `HOST`           |
+| `--port`      | `8000`      | `PORT`           |
 
 ## Client library
 

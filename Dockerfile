@@ -15,8 +15,9 @@ COPY --from=builder /install /usr/local
 
 ENV KIWIX_BASE_URL=""
 ENV TRANSPORT="streamable-http"
+ENV HOST="0.0.0.0"
+ENV PORT="8000"
 
 EXPOSE 8000
 
-ENTRYPOINT ["kiwix-mcp"]
-CMD ["--transport", "${TRANSPORT}", "--kiwix-base-url", "${KIWIX_BASE_URL}"]
+ENTRYPOINT ["sh", "-c", "kiwix-mcp --transport ${TRANSPORT} --base-url ${KIWIX_BASE_URL}"]

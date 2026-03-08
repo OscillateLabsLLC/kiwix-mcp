@@ -15,9 +15,20 @@ def main() -> None:
     )
     parser.add_argument(
         "--transport",
-        default="stdio",
+        default=os.environ.get("TRANSPORT", "stdio"),
         choices=["stdio", "sse", "streamable-http"],
         help="Transport protocol (default: stdio)",
+    )
+    parser.add_argument(
+        "--host",
+        default=os.environ.get("HOST", "127.0.0.1"),
+        help="Bind host for HTTP transports (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", "8000")),
+        help="Bind port for HTTP transports (default: 8000)",
     )
     args = parser.parse_args()
 
@@ -29,7 +40,7 @@ def main() -> None:
     from kiwix_mcp.server import create_server
 
     client = KiwixClient(args.base_url)
-    mcp = create_server(client)
+    mcp = create_server(client, host=args.host, port=args.port)
 
     transport = args.transport
     print(f"kiwix-mcp starting ({transport}) → {args.base_url}", file=sys.stderr)

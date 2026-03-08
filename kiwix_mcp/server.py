@@ -7,7 +7,6 @@ Exposed tools:
 """
 from __future__ import annotations
 
-from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -15,8 +14,8 @@ from kiwix_client import KiwixClient, strip_html
 from kiwix_client.parse import Book, SearchResponse
 
 
-def create_server(client: KiwixClient) -> FastMCP:
-    mcp = FastMCP("kiwix-mcp")
+def create_server(client: KiwixClient, host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+    mcp = FastMCP("kiwix-mcp", host=host, port=port)
 
     # ------------------------------------------------------------------
     # kiwix_list_books
