@@ -1,0 +1,9 @@
+{
+  "release-type": "python",
+  "packages": {
+    ".": {
+      "release-type": "python",
+      "initial-version": "1.0.0"
+    }
+  }
+}
