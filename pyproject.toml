@@ -20,6 +20,7 @@ dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "respx>=0.21"]
 
 [project.scripts]
 kiwix-mcp = "kiwix_mcp.__main__:main"
+kiwix-client = "kiwix_client.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["kiwix_client", "kiwix_mcp", "kiwix_ovos"]
