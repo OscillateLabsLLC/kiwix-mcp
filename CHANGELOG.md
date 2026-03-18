@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.2.1...v1.3.0) (2026-03-18)
+
+
+### Features
+
+* add CORS support for browser-based MCP clients ([197a0ea](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/197a0eae51914f7cee8d99bf0e85ffc6b462cad9))
+
 ## [1.2.1](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.2.0...v1.2.1) (2026-03-17)
 
 
