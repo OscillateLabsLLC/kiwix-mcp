@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "respx>=0.21"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "pytest-cov>=5.0", "respx>=0.21"]
 
 [project.scripts]
 kiwix-mcp = "kiwix_mcp.__main__:main"
@@ -28,3 +28,4 @@ packages = ["kiwix_client", "kiwix_mcp", "kiwix_ovos"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = "--cov=kiwix_mcp --cov=kiwix_client --cov-report=term-missing"

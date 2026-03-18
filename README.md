@@ -80,6 +80,21 @@ kiwix-mcp --transport streamable-http --base-url http://localhost:8080
 
 Then point your MCP client at `http://localhost:8000/mcp`.
 
+### CORS (browser-based clients)
+
+When using HTTP transports with browser-based MCP clients (e.g. llama-server WebUI), CORS headers are added automatically. By default all origins are allowed.
+
+To restrict allowed origins:
+
+```bash
+kiwix-mcp --transport streamable-http --base-url http://localhost:8080 \
+  --cors-allow-origins "http://localhost:3000,http://myapp.example.com"
+# or
+CORS_ALLOW_ORIGINS="http://localhost:3000" kiwix-mcp --transport streamable-http --base-url http://localhost:8080
+```
+
+CORS has no effect on stdio transport.
+
 ### Docker
 
 ```bash
@@ -96,18 +111,20 @@ docker run \
   -e TRANSPORT=sse \
   -e HOST=0.0.0.0 \
   -e PORT=8000 \
+  -e CORS_ALLOW_ORIGINS="http://localhost:3000" \
   -p 8000:8000 \
   oscillatelabs/kiwix-mcp
 ```
 
 ## Options
 
-| Flag          | Default     | Env              |
-| ------------- | ----------- | ---------------- |
-| `--base-url`  | —           | `KIWIX_BASE_URL` |
-| `--transport` | `stdio`     | `TRANSPORT`      |
-| `--host`      | `127.0.0.1` | `HOST`           |
-| `--port`      | `8000`      | `PORT`           |
+| Flag                   | Default     | Env                  |
+| ---------------------- | ----------- | -------------------- |
+| `--base-url`           | —           | `KIWIX_BASE_URL`     |
+| `--transport`          | `stdio`     | `TRANSPORT`          |
+| `--host`               | `127.0.0.1` | `HOST`               |
+| `--port`               | `8000`      | `PORT`               |
+| `--cors-allow-origins` | `*`         | `CORS_ALLOW_ORIGINS` |
 
 ## Client library
 

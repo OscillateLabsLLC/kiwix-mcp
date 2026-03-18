@@ -4,6 +4,26 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from typing import Any
+
+from mcp.server.fastmcp import FastMCP
+from starlette.middleware.cors import CORSMiddleware
+
+
+def build_cors_app(mcp: FastMCP, transport: str, cors_origins: str) -> Any:
+    """Wrap an MCP HTTP app with CORS middleware.
+
+    Returns the wrapped ASGI app ready for uvicorn.
+    """
+    app = mcp.streamable_http_app() if transport == "streamable-http" else mcp.sse_app()
+    origins = [o.strip() for o in cors_origins.split(",")]
+    return CORSMiddleware(
+        app,
+        allow_origins=origins,
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+        expose_headers=["Mcp-Session-Id"],
+    )
 
 
 def main() -> None:
@@ -30,6 +50,11 @@ def main() -> None:
         default=int(os.environ.get("PORT", "8000")),
         help="Bind port for HTTP transports (default: 8000)",
     )
+    parser.add_argument(
+        "--cors-allow-origins",
+        default=os.environ.get("CORS_ALLOW_ORIGINS", "*"),
+        help="Comma-separated CORS allowed origins (or set CORS_ALLOW_ORIGINS, default: '*')",
+    )
     args = parser.parse_args()
 
     if not args.base_url:
@@ -44,7 +69,14 @@ def main() -> None:
 
     transport = args.transport
     print(f"kiwix-mcp starting ({transport}) → {args.base_url}", file=sys.stderr)
-    mcp.run(transport=transport)
+
+    if transport in ("streamable-http", "sse"):
+        import uvicorn
+
+        app = build_cors_app(mcp, transport, args.cors_allow_origins)
+        uvicorn.run(app, host=args.host, port=args.port)
+    else:
+        mcp.run(transport=transport)
 
 
 if __name__ == "__main__":
