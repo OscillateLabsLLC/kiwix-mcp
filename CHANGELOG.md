@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.4.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.3.0...v1.4.0) (2026-04-24)
+
+
+### Features
+
+* dynamic tool descriptions + CLI/env overrides (from [#8](https://github.com/OscillateLabsLLC/kiwix-mcp/issues/8)) ([f7b75fe](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/f7b75fed3e8cb5c5d5a72140f5fc3d4f7c30c5ee))
+* dynamic tool descriptions + CLI/env overrides (from issue [#8](https://github.com/OscillateLabsLLC/kiwix-mcp/issues/8)) ([f8e2e0c](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/f8e2e0c29890715f696487b14c2341cfbbf8c35f))
+
+
+### Bug Fixes
+
+* raise ValueError on any 400 from /search ([#8](https://github.com/OscillateLabsLLC/kiwix-mcp/issues/8)) ([eb2ae0d](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/eb2ae0dc58e5817842da386841e2601cfb6ea438))
+* raise ValueError on any 400 from /search, not just "confusion-of-tongues" ([#8](https://github.com/OscillateLabsLLC/kiwix-mcp/issues/8)) ([ad1f97b](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/ad1f97b9cc35fccdaa4357faab232d6a93bd327c))
+
 ## [1.3.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.2.1...v1.3.0) (2026-03-18)
 
 
