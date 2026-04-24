@@ -202,3 +202,90 @@ class TestMCPTools:
         assert "Hello" in out
         assert "World & stuff" in out
         assert "<" not in out
+
+
+# ---------------------------------------------------------------------------
+# Dynamic descriptions + override plumbing (from issue #8)
+# ---------------------------------------------------------------------------
+
+def _get_tool_description(mcp, tool_name: str) -> str:
+    """Extract the registered description for a given MCP tool."""
+    import asyncio
+    tools = asyncio.run(mcp.list_tools())
+    for t in tools:
+        if t.name == tool_name:
+            return t.description or ""
+    raise KeyError(f"tool {tool_name!r} not registered")
+
+
+class TestDynamicDescriptions:
+    """create_server should adapt kiwix_search description to book count."""
+
+    def test_single_book_server_gets_simplified_search_description(self):
+        """On a single-book server the 'book' parameter is irrelevant, so the
+        description should omit any call-list-first nagging."""
+        mock = MockKiwixClient(books=[
+            Book(slug="only", title="Only Book", summary="", category="", article_count=0)
+        ])
+        mcp = create_server(mock)
+        desc = _get_tool_description(mcp, "kiwix_search")
+        assert "REQUIRED" not in desc
+        assert "kiwix_list_books" not in desc  # no nagging on single-book servers
+
+    def test_multi_book_server_gets_nagging_search_description(self):
+        """Multiple books → description must tell the model to list first and
+        mark 'book' as required, because models otherwise skip that step."""
+        mock = MockKiwixClient(books=[
+            Book(slug="a", title="A", summary="", category="", article_count=0),
+            Book(slug="b", title="B", summary="", category="", article_count=0),
+            Book(slug="c", title="C", summary="", category="", article_count=0),
+        ])
+        mcp = create_server(mock)
+        desc = _get_tool_description(mcp, "kiwix_search")
+        assert "kiwix_list_books" in desc
+        assert "3" in desc  # book count surfaced so the model knows the situation
+
+    def test_probe_failure_falls_back_to_static_description(self):
+        """If list_books() raises at startup, we must still create a working
+        server with the static default description rather than crashing."""
+        mock = MockKiwixClient(error=RuntimeError("server unreachable"))
+        # Must not raise even though list_books fails:
+        mcp = create_server(mock)
+        desc = _get_tool_description(mcp, "kiwix_search")
+        # Static default contains this phrasing:
+        assert "Full-text search across Kiwix ZIM books" in desc
+
+    def test_auto_describe_false_uses_static(self):
+        """Callers that want the static description regardless of server
+        state can pass auto_describe=False."""
+        mock = MockKiwixClient(books=[
+            Book(slug="a", title="A", summary="", category="", article_count=0),
+            Book(slug="b", title="B", summary="", category="", article_count=0),
+        ])
+        mcp = create_server(mock, auto_describe=False)
+        desc = _get_tool_description(mcp, "kiwix_search")
+        # Static default — no book count, no REQUIRED nagging:
+        assert "REQUIRED" not in desc
+        assert "2" not in desc
+
+
+class TestDescriptionOverrides:
+    """Explicit overrides win over auto-compute and static defaults."""
+
+    def test_search_description_override_wins_over_autocompute(self):
+        mock = MockKiwixClient(books=[
+            Book(slug="a", title="A", summary="", category="", article_count=0),
+            Book(slug="b", title="B", summary="", category="", article_count=0),
+        ])
+        mcp = create_server(mock, search_description="custom search desc")
+        assert _get_tool_description(mcp, "kiwix_search") == "custom search desc"
+
+    def test_list_books_description_override(self):
+        mock = MockKiwixClient()
+        mcp = create_server(mock, list_books_description="custom list desc")
+        assert _get_tool_description(mcp, "kiwix_list_books") == "custom list desc"
+
+    def test_fetch_description_override(self):
+        mock = MockKiwixClient()
+        mcp = create_server(mock, fetch_description="custom fetch desc")
+        assert _get_tool_description(mcp, "kiwix_fetch_article") == "custom fetch desc"

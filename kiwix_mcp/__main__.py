@@ -55,6 +55,41 @@ def main() -> None:
         default=os.environ.get("CORS_ALLOW_ORIGINS", "*"),
         help="Comma-separated CORS allowed origins (or set CORS_ALLOW_ORIGINS, default: '*')",
     )
+    parser.add_argument(
+        "--list-books-description",
+        default=os.environ.get("KIWIX_LIST_BOOKS_DESCRIPTION"),
+        help=(
+            "Override the kiwix_list_books tool description (or set "
+            "KIWIX_LIST_BOOKS_DESCRIPTION). Useful for tuning prompt style "
+            "per model."
+        ),
+    )
+    parser.add_argument(
+        "--search-description",
+        default=os.environ.get("KIWIX_SEARCH_DESCRIPTION"),
+        help=(
+            "Override the kiwix_search tool description (or set "
+            "KIWIX_SEARCH_DESCRIPTION). When unset, the description is "
+            "computed from the server's book count at startup."
+        ),
+    )
+    parser.add_argument(
+        "--fetch-description",
+        default=os.environ.get("KIWIX_FETCH_DESCRIPTION"),
+        help=(
+            "Override the kiwix_fetch_article tool description (or set "
+            "KIWIX_FETCH_DESCRIPTION)."
+        ),
+    )
+    parser.add_argument(
+        "--no-auto-describe",
+        action="store_true",
+        default=os.environ.get("KIWIX_NO_AUTO_DESCRIBE", "").lower() in ("1", "true", "yes"),
+        help=(
+            "Disable auto-computing kiwix_search description from book count. "
+            "Use the static default instead (or set KIWIX_NO_AUTO_DESCRIBE=1)."
+        ),
+    )
     args = parser.parse_args()
 
     if not args.base_url:
@@ -65,7 +100,15 @@ def main() -> None:
     from kiwix_mcp.server import create_server
 
     client = KiwixClient(args.base_url)
-    mcp = create_server(client, host=args.host, port=args.port)
+    mcp = create_server(
+        client,
+        host=args.host,
+        port=args.port,
+        list_books_description=args.list_books_description,
+        search_description=args.search_description,
+        fetch_description=args.fetch_description,
+        auto_describe=not args.no_auto_describe,
+    )
 
     transport = args.transport
     print(f"kiwix-mcp starting ({transport}) → {args.base_url}", file=sys.stderr)
