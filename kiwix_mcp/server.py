@@ -7,6 +7,7 @@ Exposed tools:
 """
 from __future__ import annotations
 
+from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
@@ -14,19 +15,91 @@ from kiwix_client import KiwixClient, strip_html
 from kiwix_client.parse import Book, SearchResponse
 
 
-def create_server(client: KiwixClient, host: str = "127.0.0.1", port: int = 8000) -> FastMCP:
+# Static fallback descriptions — used when auto_describe is False or when
+# probing the server for book count fails.
+_STATIC_LIST_BOOKS_DESCRIPTION = (
+    "List ZIM books available on the Kiwix server. "
+    "Optionally filter by title keyword."
+)
+_STATIC_SEARCH_DESCRIPTION = (
+    "Full-text search across Kiwix ZIM books. "
+    "Returns article titles, snippets, and URLs. "
+    "Use kiwix_fetch_article to retrieve full content."
+)
+_STATIC_FETCH_DESCRIPTION = (
+    "Fetch an article from the Kiwix server and return its content "
+    "as plain text. Use the URL field from kiwix_search results."
+)
+
+
+def _auto_search_description(book_count: int) -> str:
+    """Compose a tool description tuned to how many books are on the server.
+
+    Smaller LLMs often skip kiwix_list_books and call kiwix_search with no
+    book parameter, which fails on multi-book servers. A description that
+    explicitly tells the model to list first helps them succeed on the first
+    try.
+    """
+    if book_count <= 1:
+        # Single book: no need to mention book scoping at all.
+        return (
+            "Full-text search across this Kiwix server's ZIM book. "
+            "Returns article titles, snippets, and URLs. "
+            "Use kiwix_fetch_article to retrieve full content."
+        )
+    return (
+        f"Full-text search across Kiwix ZIM books (this server has {book_count} "
+        "books). REQUIRED: call kiwix_list_books first to discover book slugs, "
+        "then pass one as the 'book' parameter — searching without a book will "
+        "fail on multi-book servers. Returns article titles, snippets, and URLs."
+    )
+
+
+def _probe_book_count(client: KiwixClient) -> Optional[int]:
+    """Return the number of books on the server, or None if probing fails."""
+    try:
+        return len(client.list_books())
+    except Exception:
+        return None
+
+
+def create_server(
+    client: KiwixClient,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    list_books_description: Optional[str] = None,
+    search_description: Optional[str] = None,
+    fetch_description: Optional[str] = None,
+    auto_describe: bool = True,
+) -> FastMCP:
+    """Build the MCP server.
+
+    Tool descriptions are resolved with this precedence:
+      1. Explicit override (one of the *_description kwargs) if provided
+      2. Auto-computed from book count when auto_describe=True
+      3. Static default
+
+    The auto-compute path calls client.list_books() once at server creation.
+    If that probe fails, we fall back to static defaults rather than failing
+    to start the server.
+    """
     mcp = FastMCP("kiwix-mcp", host=host, port=port)
+
+    book_count = _probe_book_count(client) if auto_describe else None
+
+    list_books_desc = list_books_description or _STATIC_LIST_BOOKS_DESCRIPTION
+    search_desc = search_description or (
+        _auto_search_description(book_count)
+        if book_count is not None
+        else _STATIC_SEARCH_DESCRIPTION
+    )
+    fetch_desc = fetch_description or _STATIC_FETCH_DESCRIPTION
 
     # ------------------------------------------------------------------
     # kiwix_list_books
     # ------------------------------------------------------------------
 
-    @mcp.tool(
-        description=(
-            "List ZIM books available on the Kiwix server. "
-            "Optionally filter by title keyword."
-        ),
-    )
+    @mcp.tool(description=list_books_desc)
     def kiwix_list_books(query: str = "") -> str:
         """List available ZIM books.
 
@@ -40,13 +113,7 @@ def create_server(client: KiwixClient, host: str = "127.0.0.1", port: int = 8000
     # kiwix_search
     # ------------------------------------------------------------------
 
-    @mcp.tool(
-        description=(
-            "Full-text search across Kiwix ZIM books. "
-            "Returns article titles, snippets, and URLs. "
-            "Use kiwix_fetch_article to retrieve full content."
-        ),
-    )
+    @mcp.tool(description=search_desc)
     def kiwix_search(query: str, book: str = "", start: int = 0) -> str:
         """Search Kiwix books.
 
@@ -74,12 +141,7 @@ def create_server(client: KiwixClient, host: str = "127.0.0.1", port: int = 8000
     # kiwix_fetch_article
     # ------------------------------------------------------------------
 
-    @mcp.tool(
-        description=(
-            "Fetch an article from the Kiwix server and return its content "
-            "as plain text. Use the URL field from kiwix_search results."
-        ),
-    )
+    @mcp.tool(description=fetch_desc)
     def kiwix_fetch_article(url: str) -> str:
         """Fetch a Kiwix article as plain text.
 
