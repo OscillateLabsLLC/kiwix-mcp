@@ -109,11 +109,12 @@ class KiwixClient:
 
         resp = self._client.get(f"{self._base_url}/search", params=params)
 
-        if resp.status_code == 400 and "confusion-of-tongues" in resp.text:
+        if resp.status_code == 400:
             raise ValueError(
-                "search requires a book scope: this server has books in multiple "
-                "languages and cannot search across them. Use list_books() to find "
-                "a book slug, then pass it as the 'books' argument."
+                "search requires a book scope: kiwix-serve cannot search across "
+                "all books on this server (typically because they span multiple "
+                "languages or none was specified). Use list_books() to find a "
+                "book slug, then pass it as the 'books' argument."
             )
         resp.raise_for_status()
         return parse_search_html(resp.text, pattern, start)
