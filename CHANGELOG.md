@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.4.0...v1.4.1) (2026-05-29)
+
+
+### Documentation
+
+* correct manual install to uv in CONTRIBUTING ([bd8c1b6](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/bd8c1b66c653d930df10a4285872dfea70d01cdc))
+* fix CONTRIBUTING toolchain + stop tracking build artifacts ([7b36848](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/7b36848c46bf3058a0bbe91b3e8028dc275b8737))
+
 ## [1.4.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.3.0...v1.4.0) (2026-04-24)
 
 
