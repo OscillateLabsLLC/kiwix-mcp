@@ -145,3 +145,28 @@ class TestStripHTML:
     ])
     def test_strip_html(self, inp: str, want: str):
         assert strip_html(inp) == want, f"input={inp!r}"
+
+    @pytest.mark.parametrize("inp, absent, present", [
+        # Wikipedia ZIM articles open with an inline stylesheet; a tag-strip keeps
+        # the CSS body, which then gets spoken aloud.
+        ("<style>.mw-parser-output{font-style:italic}</style><p>Newton was a "
+         "mathematician.</p>", "font-style", "mathematician"),
+        # Gutenberg ZIM articles embed a JSON locale blob in a <script>.
+        ('<script>{"default_locale": "en"}</script><p>Real prose here.</p>',
+         "default_locale", "Real prose"),
+        ("<noscript><p>Enable JavaScript</p></noscript><p>Actual text.</p>",
+         "Enable JavaScript", "Actual text"),
+    ])
+    def test_non_prose_element_contents_are_dropped(self, inp, absent, present):
+        """Script/style *contents* must be removed, not merely untagged.
+
+        Found by fetching live Wikipedia and Gutenberg articles: summaries came back
+        full of CSS rules and JSON, because the regex tag-strip only removed the
+        surrounding tags.
+        """
+        out = strip_html(inp)
+        assert absent not in out
+        assert present in out
+
+    def test_strip_html_handles_empty_input(self):
+        assert strip_html("") == ""

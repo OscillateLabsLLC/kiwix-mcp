@@ -222,8 +222,27 @@ def _html_decode(s: str) -> str:
     return s
 
 
+#: Elements whose *contents* are not prose and must be dropped, not just untagged.
+#: A bare tag-strip leaves CSS rules and JSON blobs inline, which then surface in
+#: spoken summaries as gibberish.
+_NON_PROSE_TAGS = ("script", "style", "noscript", "template")
+
+
 def strip_html(html: str) -> str:
-    """Remove HTML tags and decode basic entities, returning plain text."""
-    stripped = _RE_TAGS.sub(" ", html)
-    decoded = _html_decode(stripped)
-    return _RE_WHITESPACE.sub(" ", decoded).strip()
+    """Remove HTML markup and return readable plain text.
+
+    Drops the contents of script/style elements entirely; a regex tag-strip keeps
+    them, which is how CSS rules and JSON language blobs ended up in article
+    summaries fetched from live Wikipedia and Gutenberg ZIMs.
+    """
+    if not html:
+        return ""
+    try:
+        soup = BeautifulSoup(html, "lxml")
+    except Exception:
+        # Fall back to the regex path rather than failing the whole fetch.
+        return _RE_WHITESPACE.sub(" ", _html_decode(_RE_TAGS.sub(" ", html))).strip()
+
+    for element in soup(_NON_PROSE_TAGS):
+        element.decompose()
+    return _RE_WHITESPACE.sub(" ", soup.get_text(" ")).strip()
