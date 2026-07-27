@@ -310,7 +310,9 @@ def test_suggest_is_preferred_over_full_text():
     )
     respx.get(f"{BASE}{BOOK_PREFIX}/A/Isaac_Newton").mock(
         return_value=httpx.Response(
-            200, text="<p>Isaac Newton was an English mathematician and physicist.</p>"
+            200,
+            text="<p>Isaac Newton was an English mathematician and "
+                 "physicist who formulated the laws of motion.</p>",
         )
     )
 
@@ -338,7 +340,9 @@ def test_suggest_outranks_book_length_namesake():
     )
     respx.get(f"{BASE}{BOOK_PREFIX}/A/Isaac_Newton").mock(
         return_value=httpx.Response(
-            200, text="<p>Isaac Newton was an English mathematician and physicist.</p>"
+            200,
+            text="<p>Isaac Newton was an English mathematician and "
+                 "physicist who formulated the laws of motion.</p>",
         )
     )
 
@@ -362,7 +366,9 @@ def test_falls_back_to_full_text_when_suggest_finds_nothing():
     )
     respx.get(f"{BASE}/b/A/Water_filter").mock(
         return_value=httpx.Response(
-            200, text="<p>A water filter removes impurities from water.</p>"
+            200,
+            text="<p>A water filter removes impurities from water using a "
+                 "fine physical barrier or a chemical process.</p>",
         )
     )
 
@@ -383,7 +389,9 @@ def test_falls_back_to_full_text_when_suggest_errors():
     )
     respx.get(f"{BASE}/b/A/Water_filter").mock(
         return_value=httpx.Response(
-            200, text="<p>A water filter removes impurities from water.</p>"
+            200,
+            text="<p>A water filter removes impurities from water using a "
+                 "fine physical barrier or a chemical process.</p>",
         )
     )
 

@@ -23,7 +23,7 @@ from typing import List, Optional, Tuple
 
 import httpx
 
-from kiwix_client import KiwixClient, strip_html
+from kiwix_client import KiwixClient, extract_article_text
 from kiwix_client.parse import SearchResult
 
 __all__ = [
@@ -366,6 +366,9 @@ class KiwixRetrievalEngine:
         url = self._client.article_url(self._book, suggestion.path)
         summary = self._summarize_url(url)
         if not summary:
+            # Old ZIMs carry stale title-index entries pointing at articles that are
+            # not in the archive (seen on a 2020 Gutenberg ZIM). Fall through to
+            # full-text rather than declining outright.
             return None
 
         return KiwixAnswer(
@@ -516,12 +519,21 @@ class KiwixRetrievalEngine:
         return summary or self._trim(result.snippet)
 
     def _summarize_url(self, url: str) -> str:
-        """Fetch an article URL and reduce it to a short spoken lead."""
+        """Fetch an article URL and reduce it to a short spoken lead.
+
+        Returns "" when the page holds no prose. Besides genuine errors, that covers
+        a real failure mode: older kiwix-tools builds answer a missing article with
+        HTTP 200 and the library landing page, so a stale title-index entry looks
+        like success until you notice there are no paragraphs.
+        """
         try:
             html = self._client.fetch_article(url)
         except (httpx.TimeoutException, httpx.HTTPError):
             return ""
-        return self._trim(self._lead_paragraph(strip_html(html)))
+        text = extract_article_text(html)
+        if not text:
+            return ""
+        return self._trim(self._lead_paragraph(text))
 
     def _lead_paragraph(self, text: str) -> str:
         """Drop leading navigation/boilerplate before the first real sentence."""

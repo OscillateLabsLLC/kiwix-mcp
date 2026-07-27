@@ -1,5 +1,5 @@
 from .client import KiwixClient, Book, SearchResult, SearchResponse, Suggestion
-from .parse import strip_html
+from .parse import extract_article_text, strip_html
 
 __all__ = [
     "KiwixClient",
@@ -7,5 +7,6 @@ __all__ = [
     "SearchResult",
     "SearchResponse",
     "Suggestion",
+    "extract_article_text",
     "strip_html",
 ]
