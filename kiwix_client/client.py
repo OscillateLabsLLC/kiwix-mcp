@@ -42,7 +42,10 @@ class KiwixClient:
         parsed = urlparse(self._base_url)
         # origin is used for article URLs, which are absolute paths from root
         self._origin = f"{parsed.scheme}://{parsed.netloc}"
-        self._client = httpx.Client(timeout=timeout)
+        # Newer libkiwix servers 302 bare article paths to a /content/ prefixed URL.
+        # httpx does not follow redirects by default, which would surface as an
+        # HTTPStatusError on an otherwise valid article.
+        self._client = httpx.Client(timeout=timeout, follow_redirects=True)
 
     def close(self) -> None:
         self._client.close()
