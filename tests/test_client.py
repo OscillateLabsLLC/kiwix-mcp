@@ -1,5 +1,7 @@
-"""Tests for KiwixClient HTTP error handling."""
+"""Tests for KiwixClient HTTP behaviour."""
 from __future__ import annotations
+
+import json
 
 import httpx
 import pytest
@@ -47,6 +49,54 @@ def test_fetch_article_follows_redirects():
 
     client = KiwixClient("http://localhost:9090")
     assert "crustaceans" in client.fetch_article("/book/A/Krill")
+
+
+@respx.mock
+def test_suggest_returns_title_hits_and_drops_pattern_entry():
+    """kiwix-serve appends a kind="pattern" full-text fallback with no path; treating
+    it as an article would build a URL to nowhere."""
+    respx.get("http://localhost:9090/suggest").mock(
+        return_value=httpx.Response(200, text=json.dumps([
+            {"value": "Isaac Newton", "kind": "path", "path": "A/Isaac_Newton"},
+            {"value": "x", "label": "containing 'Isaac'...", "kind": "pattern"},
+        ]))
+    )
+    client = KiwixClient("http://localhost:9090")
+    suggestions = client.suggest("Isaac Newton", "book")
+    assert [s.title for s in suggestions] == ["Isaac Newton"]
+    assert suggestions[0].path == "A/Isaac_Newton"
+
+
+@respx.mock
+def test_suggest_returns_empty_when_unsupported():
+    """Older servers may lack a title index; that is a fallback, not a failure."""
+    respx.get("http://localhost:9090/suggest").mock(
+        return_value=httpx.Response(404, text="not found")
+    )
+    assert KiwixClient("http://localhost:9090").suggest("x", "book") == []
+
+
+@respx.mock
+def test_suggest_survives_malformed_json():
+    """A broken payload should degrade to 'no suggestions', not raise."""
+    respx.get("http://localhost:9090/suggest").mock(
+        return_value=httpx.Response(200, text="<html>not json</html>")
+    )
+    assert KiwixClient("http://localhost:9090").suggest("x", "book") == []
+
+
+@pytest.mark.parametrize("base,book,path,want", [
+    # Bare /{book}/{path} is the one scheme both server generations serve.
+    ("http://h:8080", "b", "A/Isaac_Newton", "/b/A/Isaac_Newton"),
+    # Gutenberg paths contain spaces; unencoded the request fails outright.
+    ("http://h:8080", "b", "A/Isaac Newton.6288.html",
+     "/b/A/Isaac%20Newton.6288.html"),
+    # A path-prefixed deployment must keep its prefix.
+    ("http://h:3000/kiwix", "b", "A/Krill", "/kiwix/b/A/Krill"),
+])
+def test_article_url_construction(base, book, path, want):
+    """/suggest returns only a path fragment, so the URL is assembled client-side."""
+    assert KiwixClient(base).article_url(book, path) == want
 
 
 @respx.mock

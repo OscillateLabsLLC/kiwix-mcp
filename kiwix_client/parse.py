@@ -7,6 +7,7 @@ Covers:
 """
 from __future__ import annotations
 
+import json
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -44,6 +45,18 @@ class SearchResult:
     snippet: str = ""
     word_count: int = 0
     url: str = ""         # full relative URL e.g. /book_slug/A/path
+
+
+@dataclass
+class Suggestion:
+    """A title-index hit from ``/suggest``.
+
+    Distinct from :class:`SearchResult`: suggestions carry no snippet or word count,
+    only a title and the article path within the book.
+    """
+
+    title: str = ""
+    path: str = ""       # path within the book, e.g. "A/Isaac_Newton"
 
 
 @dataclass
@@ -196,6 +209,38 @@ def parse_search_html(html: str, query: str, start: int) -> SearchResponse:
         sr.results.append(result)
 
     return sr
+
+
+# ---------------------------------------------------------------------------
+# Suggestion parsing
+# ---------------------------------------------------------------------------
+
+def parse_suggestions(payload: str) -> List[Suggestion]:
+    """Parse the JSON array returned by ``/suggest``.
+
+    Entries whose ``kind`` is not ``"path"`` are dropped: kiwix-serve appends a
+    full-text-search fallback entry ("containing '<term>'...") that carries no article
+    path and is not an answer.
+
+    Malformed payloads yield an empty list rather than raising — a missing title index
+    should degrade to "no suggestions", not break the caller.
+    """
+    try:
+        entries = json.loads(payload)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(entries, list):
+        return []
+
+    suggestions: List[Suggestion] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or entry.get("kind") != "path":
+            continue
+        path = (entry.get("path") or "").strip()
+        title = unescape((entry.get("value") or "").strip())
+        if path and title:
+            suggestions.append(Suggestion(title=title, path=path))
+    return suggestions
 
 
 # ---------------------------------------------------------------------------
