@@ -51,7 +51,7 @@ def _mock_server(suggest: str = "[]") -> None:
 
 def test_missing_book_config_raises():
     """A solver that silently never answers hides its own misconfiguration."""
-    with pytest.raises(ValueError, match="'book' config key"):
+    with pytest.raises(ValueError, match="at least one book"):
         KiwixSolver({})
 
 
@@ -109,17 +109,31 @@ def test_declines_instead_of_raising_on_stale_slug():
 def test_tuning_keys_pass_through_from_config():
     """Skill settings must be able to reach the engine's thresholds."""
     solver = KiwixSolver({"book": BOOK, "summary_chars": 99, "min_words": 5})
-    assert solver._engine.tuning.summary_chars == 99
-    assert solver._engine.tuning.min_words == 5
+    tuning = solver._library.tuning_for(BOOK)
+    assert tuning.summary_chars == 99
+    assert tuning.min_words == 5
 
 
 @respx.mock
-def test_long_form_config_disables_length_ceiling():
+def test_long_form_preset_disables_length_ceiling():
     """Pointing the solver at Project Gutenberg requires the long_form preset, or the
     default ceiling rejects every article in the corpus."""
-    solver = KiwixSolver({"book": "gutenberg_en_all_2023-08", "long_form": True})
-    assert solver._engine.tuning.max_words == 0
-    assert solver._engine.tuning.min_title_overlap == 0.75
+    solver = KiwixSolver({"books": [
+        {"book": "gutenberg_en_all_2023-08", "preset": "long_form"},
+    ]})
+    tuning = solver._library.tuning_for("gutenberg_en_all_2023-08")
+    assert tuning.max_words == 0
+    assert tuning.min_title_overlap == 0.75
+
+
+def test_per_book_tuning_is_independent():
+    """An encyclopedia and a book library cannot share one length ceiling."""
+    solver = KiwixSolver({"books": [
+        {"book": "wikipedia_en_all_maxi_2024-01"},
+        {"book": "gutenberg_en_all_2023-08", "preset": "long_form"},
+    ]})
+    assert solver._library.tuning_for("wikipedia_en_all_maxi_2024-01").max_words > 0
+    assert solver._library.tuning_for("gutenberg_en_all_2023-08").max_words == 0
 
 
 @respx.mock

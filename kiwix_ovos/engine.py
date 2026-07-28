@@ -308,6 +308,10 @@ class KiwixRetrievalEngine:
     def tuning(self) -> AnswerTuning:
         return self._tuning
 
+    @property
+    def book(self) -> str:
+        return self._book
+
     # -- public API ----------------------------------------------------
 
     def search(self, query: str) -> Optional[KiwixAnswer]:

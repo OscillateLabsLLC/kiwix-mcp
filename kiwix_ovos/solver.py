@@ -14,19 +14,13 @@ server, so this plugin works with no internet connection.
 """
 from __future__ import annotations
 
-from dataclasses import fields
 from typing import Dict, List, Optional
 
 from ovos_plugin_manager.templates.solvers import QuestionSolver
 from ovos_utils.log import LOG
 
-from kiwix_client import KiwixClient
-from kiwix_ovos.engine import (
-    AnswerTuning,
-    KiwixAnswer,
-    KiwixBookNotFound,
-    KiwixRetrievalEngine,
-)
+from kiwix_ovos.engine import KiwixAnswer
+from kiwix_ovos.library import KiwixLibrary, books_from_config
 
 __all__ = ["KiwixSolver"]
 
@@ -34,15 +28,20 @@ __all__ = ["KiwixSolver"]
 class KiwixSolver(QuestionSolver):
     """Answer questions from offline ZIM archives served by kiwix-serve.
 
-    Connection config:
-        base_url:   kiwix-serve URL (default ``http://localhost:8080``)
-        book:       book slug or stable OPDS name to search (required)
-        long_form:  set true for book-length corpora such as Project Gutenberg, which
-                    would otherwise be rejected wholesale by the length ceiling
+    Books are always explicit — which corpora may feed spoken answers is a deployment
+    decision, not something to infer from the catalog::
 
-    Every field of :class:`~kiwix_ovos.engine.AnswerTuning` may also be set here
-    (``min_words``, ``max_words``, ``min_title_overlap``, ``summary_chars``,
-    ``timeout``, …); unrecognised keys are ignored.
+        base_url: http://localhost:8080
+        books:
+          - book: wikipedia_en_all_maxi_2024-01
+          - book: gutenberg_en_all_2023-08
+            preset: long_form
+          - book: wikihow_en_maxi_2023-03
+            preset: how_to
+            min_title_overlap: 0.4      # any AnswerTuning field overrides the preset
+
+    Each book gets its own client and tuning; all are queried concurrently and the
+    highest-confidence answer wins. A single ``book: <slug>`` key also works.
     """
 
     enable_tx = False
@@ -50,33 +49,12 @@ class KiwixSolver(QuestionSolver):
 
     def __init__(self, config: Optional[Dict] = None, **kwargs) -> None:
         super().__init__(config=config or {}, **kwargs)
-        base_url = self.config.get("base_url", "http://localhost:8080")
-        book = self.config.get("book", "")
-        if not book:
-            # Fail loudly: a solver that silently never answers is worse than one that
-            # refuses to load, because the misconfiguration is invisible in logs.
-            raise ValueError(
-                "KiwixSolver requires a 'book' config key (a ZIM slug or OPDS name). "
-                "kiwix-serve scopes search per-book."
-            )
-
-        tuning = self._build_tuning(self.config)
-        self._engine = KiwixRetrievalEngine(
-            KiwixClient(base_url, timeout=tuning.timeout),
-            book=book,
-            tuning=tuning,
+        # Raises when no book is configured. Failing at load beats a solver that
+        # silently never answers, because that misconfiguration is invisible.
+        self._library = _LoggingLibrary(
+            books_from_config(self.config),
+            base_url=self.config.get("base_url", "http://localhost:8080"),
         )
-
-    @staticmethod
-    def _build_tuning(config: Dict) -> AnswerTuning:
-        """Derive tuning from config, honouring the ``long_form`` preset."""
-        if config.get("long_form"):
-            overrides = {
-                k: v for k, v in config.items()
-                if k in {f.name for f in fields(AnswerTuning)}
-            }
-            return AnswerTuning.for_long_form(**overrides)
-        return AnswerTuning.from_config(config)
 
     # ------------------------------------------------------------------
     # Solver API
@@ -132,16 +110,26 @@ class KiwixSolver(QuestionSolver):
     # ------------------------------------------------------------------
 
     def _answer(self, query: str) -> Optional[KiwixAnswer]:
-        """Query the engine, converting a stale-slug config error into a logged decline.
+        """Return the best answer across configured books, or None.
 
         The solver must never raise into the common_query path — one misconfigured
-        plugin should not take down the whole question pipeline.
+        plugin should not take down the whole question pipeline. Per-book failures
+        are contained by the library and logged there.
         """
         try:
-            return self._engine.search(query)
-        except KiwixBookNotFound as exc:
-            LOG.error(f"KiwixSolver misconfigured: {exc}")
-            return None
+            return self._library.search(query)
         except Exception as exc:  # defensive: unexpected transport/parse failure
             LOG.warning(f"KiwixSolver failed to answer {query!r}: {exc}")
             return None
+
+
+class _LoggingLibrary(KiwixLibrary):
+    """KiwixLibrary that reports per-book failures through the OVOS logger.
+
+    A book that never answers is otherwise invisible, and dated slugs
+    (``wikipedia_en_all_maxi_2024-01``) break on every ZIM update.
+    """
+
+    def record_failure(self, book: str, reason: str) -> None:
+        super().record_failure(book, reason)
+        LOG.error(f"KiwixSolver: book {book!r} failed: {reason}")

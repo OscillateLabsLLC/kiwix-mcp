@@ -11,12 +11,22 @@ from kiwix_ovos.engine import (
     KiwixRetrievalEngine,
     extract_keyword,
 )
+from kiwix_ovos.library import (
+    BookConfig,
+    KiwixLibrary,
+    books_from_config,
+    preset,
+)
 
 __all__ = [
     "DEFAULT_TUNING",
     "AnswerTuning",
+    "BookConfig",
     "KiwixAnswer",
     "KiwixBookNotFound",
+    "KiwixLibrary",
     "KiwixRetrievalEngine",
+    "books_from_config",
     "extract_keyword",
+    "preset",
 ]
