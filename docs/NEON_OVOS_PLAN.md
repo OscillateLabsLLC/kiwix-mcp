@@ -231,6 +231,37 @@ harder than the solver layer (`NeonSkill` + `neon_utils` vs `OVOSSkill` 8.x +
 `@common_query`). Keep the skill thin and let the engine carry portability. See the
 pin caveat in §6.
 
+## 4b. Deploying it
+
+Install on the hub with the skill extra (which pulls the solver too):
+
+```bash
+pip install 'kiwix-mcp[skill]'
+```
+
+Skill settings (`~/.config/mycroft/skills/kiwix-mcp.oscillatelabsllc/settings.json`):
+
+```json
+{
+  "base_url": "http://prepdisk.graywind.org:3000/kiwix",
+  "books": [
+    {"book": "wikipedia_en_all_maxi_2024-01"},
+    {"book": "wikihow_en_maxi_2023-03", "preset": "how_to"},
+    {"book": "mdwiki_en_all_2024-06"},
+    {"book": "gutenberg_en_all_2023-08", "preset": "long_form"}
+  ]
+}
+```
+
+Presets: `encyclopedia` (default), `how_to` (descriptive titles like "4 Ways to Purify
+Water"), `long_form` (book corpora — disables the length ceiling). Any `AnswerTuning`
+field set alongside `preset` overrides it. `base_url` may also be set per book, for a
+deployment spanning several Kiwix servers.
+
+**Verify each slug against the live server before deploying** — slugs embed dates and
+change on ZIM update. A stale slug is logged as an error and that book declines; the
+others still answer.
+
 ## 5. Open item — latency on very large ZIMs
 
 `wikipedia_en_all_maxi` (6.86M articles) timed out on search while the catalog on the
@@ -267,17 +298,40 @@ reason. Each gate now has a test isolating it, re-verified by mutation after the
 `AnswerTuning` refactor. **Re-run that mutation check after touching the gates** — a
 green suite is not by itself evidence the guards work.
 
-**Remaining:**
-- The skill layer (see caveat below).
-- Decide the default `book` per deployment; verify the chosen slug against the live
-  server, since slugs carry dates.
+5. ~~Content extraction~~ — `extract_article_text()` returns only article prose;
+   infoboxes, nav chrome and IPA no longer reach the speaker.
+6. ~~Multi-book support~~ — `KiwixLibrary` fans out over explicitly configured books
+   with per-book tuning, early-exiting once a book clears `confident_enough`.
+7. ~~The skill layer~~ — see the resolved contract below.
 
-### Skill-layer pin caveat (unresolved)
-`ovos-workshop` **0.1.7** is the 0.x line, so the skill must target `OVOSSkill` 0.x —
-`@common_query` as used by the modern `ovos-skill-wikipedia` (which needs `>=8.0.0`) is
-**not** available. Confirm the decorator/base-class surface in 0.1.7 before writing the
-skill; do not copy the modern skill's structure. The solver is the portable half, the
-skill is not.
+**Remaining:**
+- Choose the `books` list per deployment and verify each slug against the live server,
+  since slugs carry dates and break on ZIM update. A stale slug is logged, not silent.
+- Push the branch / open a PR.
+
+### Skill-layer contract (resolved)
+`ovos-workshop` **0.1.7** is the 0.x line, and the surface was confirmed against the
+installed source rather than docs:
+
+- **`@common_query` does not exist** before ovos-workshop 8. The modern
+  `ovos-skill-wikipedia` structure cannot be copied.
+- 0.1.x uses **`CommonQuerySkill.CQS_match_query_phrase(phrase)`** — the sole abstract
+  method, taking a bare phrase with **no `lang` argument**.
+- It returns the **4-tuple `(match, level, answer, callback)`**. The abstract method's
+  own docstring describes a *3-tuple in a different order*; the framework's unpacking
+  (`answer = result[2]`, `common_query_skill.py:143`) is authoritative. A test pins
+  this, and reversing it fails two tests.
+- The framework emits `handles_speech: True` and speaks the answer itself.
+- `CQSMatchLevel` is `EXACT` / `CATEGORY` / `GENERAL`; engine confidence maps onto it
+  at 0.9 and 0.6.
+
+Implemented in `kiwix_ovos/skill/`, installed via the `skill` extra, registered as
+`ovos.plugin.skill` → `kiwix-mcp.oscillatelabsllc`. From a clean venv the extra
+resolves to exactly the hub's pins (workshop 0.1.7, opm 0.9.0, bus-client 0.1.6)
+without pinning them explicitly.
+
+Live behaviour: "who is Isaac Newton" bids EXACT in 0.41s, "how to purify water" bids
+CATEGORY in 0.19s, nonsense declines.
 
 **`runtime_requirements` must be inverted** from both Wikipedia repos:
 `requires_internet=False`, `requires_network=True`. Kiwix is LAN-local; copying the
