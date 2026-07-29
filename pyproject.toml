@@ -25,6 +25,13 @@ ovos = [
     "ovos-utils>=0.3.0,<1.0.0",
     "setuptools<81",
 ]
+# The skill targets the 0.x CommonQuerySkill contract, which differs from modern
+# OVOS: `@common_query` does not exist before ovos-workshop 8.
+skill = [
+    "kiwix-mcp[ovos]",
+    "ovos-workshop>=0.1.0,<1.0.0",
+    "ovos-bus-client>=0.0.8,<2.0.0",
+]
 
 [project.scripts]
 kiwix-mcp = "kiwix_mcp.__main__:main"
@@ -38,6 +45,9 @@ kiwix = "kiwix_ovos.solver:KiwixSolver"
 
 [project.entry-points."opm.solver.question"]
 kiwix = "kiwix_ovos.solver:KiwixSolver"
+
+[project.entry-points."ovos.plugin.skill"]
+"kiwix-mcp.oscillatelabsllc" = "kiwix_ovos.skill:KiwixSkill"
 
 [tool.hatch.build.targets.wheel]
 packages = ["kiwix_client", "kiwix_mcp", "kiwix_ovos"]
