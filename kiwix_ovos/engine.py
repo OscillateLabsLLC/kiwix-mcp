@@ -17,6 +17,7 @@ paragraph is 1820s publisher boilerplate. Two mechanisms defend against that:
 from __future__ import annotations
 
 import re
+from time import monotonic as _monotonic
 from dataclasses import dataclass
 from dataclasses import fields as dataclass_fields
 from typing import List, Optional, Tuple
@@ -109,10 +110,13 @@ class AnswerTuning:
     #: Approximate character budget for the spoken summary.
     summary_chars: int = 400
 
-    #: Seconds before abandoning a search. Measured: 4.7s on a 119k-article Gutenberg
-    #: book, and a 6.86M-article Wikipedia ZIM exceeded the client timeout entirely.
-    #: OVOS common_query has a bounded budget, so a late answer is worse than none.
+    #: Per-request httpx timeout. An answer makes up to three sequential requests,
+    #: so this does not bound total time — :attr:`deadline` does.
     timeout: float = 5.0
+
+    #: Ceiling on total answer time, checked between stages; 0 disables. Tight
+    #: because common_query collapses its window to ~2s once another skill replies.
+    deadline: float = 1.5
 
     #: Try the ``/suggest`` title index before full-text search. Measured on a
     #: 6.86M-article Wikipedia ZIM: ~35ms vs 6-26s cold for ``/search``. Disable only
@@ -135,6 +139,8 @@ class AnswerTuning:
             raise ValueError("summary_chars must be positive")
         if self.timeout <= 0:
             raise ValueError("timeout must be positive")
+        if self.deadline < 0:
+            raise ValueError("deadline must be non-negative (0 disables it)")
         weights = (self.recall_weight, self.precision_weight, self.concision_weight)
         if any(w < 0 for w in weights):
             raise ValueError("ranking weights must be non-negative")
@@ -187,6 +193,17 @@ _QUESTION_PATTERNS = (
     r"^(?:search|look\s+up)\s+(?:for\s+)?(?P<q>.+)$",
 )
 
+# Verbs left behind by the "when did X <verb>" family. The subject is the article
+# title, so a trailing verb guarantees a title-index miss: measured on a live server,
+# "when did john candy die" extracted "john candy die" and returned zero suggestions,
+# falling through to slow full-text search.
+_RE_TRAILING_VERB = re.compile(
+    r"\s+(?:die|died|born|happen|happened|occur|occurred|start|started|begin|began|"
+    r"end|ended|come\s+out|air|aired|release[d]?|form|formed|found|founded|"
+    r"launch|launched|open|opened|close|closed|win|won|lose|lost)$",
+    re.IGNORECASE,
+)
+
 _COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _QUESTION_PATTERNS]
 
 _TRAILING_NOISE = re.compile(r"\s*\?+\s*$")
@@ -205,7 +222,11 @@ def extract_keyword(query: str) -> str:
     for pattern in _COMPILED_PATTERNS:
         match = pattern.match(cleaned)
         if match:
-            return match.group("q").strip()
+            keyword = match.group("q").strip()
+            # Drop a trailing verb the framing pattern left behind:
+            # "when did john candy die" -> "john candy". The pattern requires
+            # preceding whitespace, so a keyword that is only a verb is untouched.
+            return _RE_TRAILING_VERB.sub("", keyword).strip()
     return cleaned
 
 
@@ -337,14 +358,34 @@ class KiwixRetrievalEngine:
         if not keyword:
             return None
 
-        answer = self._answer_from_suggestions(keyword)
+        expires = _monotonic() + self._tuning.deadline if self._tuning.deadline else 0.0
+        answer = self._answer_from_suggestions(keyword, expires)
         if answer is not None:
             return answer
-        return self._answer_from_full_text(keyword)
+        return self._answer_from_full_text(keyword, expires)
+
+    @staticmethod
+    def _expired(expires: float) -> bool:
+        return bool(expires) and _monotonic() > expires
+
+    @staticmethod
+    def _remaining(expires: float) -> Optional[float]:
+        """Seconds left before ``expires``, or None when uncapped.
+
+        Each request is capped to this rather than the full per-request timeout:
+        checking the deadline only *between* stages let one hung request run the
+        whole 5s and blow a 1.5s budget. Never returns 0, which httpx reads as
+        "no timeout".
+        """
+        if not expires:
+            return None
+        return max(0.05, expires - _monotonic())
 
     # -- internals -----------------------------------------------------
 
-    def _answer_from_suggestions(self, keyword: str) -> Optional[KiwixAnswer]:
+    def _answer_from_suggestions(
+        self, keyword: str, expires: float = 0.0
+    ) -> Optional[KiwixAnswer]:
         """Resolve via the title index, or None to fall through to full-text.
 
         Suggestions carry no word count, so the length gate does not apply — a title
@@ -356,7 +397,10 @@ class KiwixRetrievalEngine:
 
         try:
             suggestions = self._client.suggest(
-                keyword, self._book, count=self._tuning.suggest_count
+                keyword,
+                self._book,
+                count=self._tuning.suggest_count,
+                timeout=self._remaining(expires),
             )
         except (httpx.TimeoutException, httpx.HTTPError):
             return None
@@ -375,8 +419,10 @@ class KiwixRetrievalEngine:
             return None
 
         score, suggestion = best
+        if self._expired(expires):
+            return None
         url = self._client.article_url(self._book, suggestion.path)
-        summary, full_text = self._summarize_url(url)
+        summary, full_text = self._summarize_url(url, expires)
         if not summary:
             # Old ZIMs carry stale title-index entries pointing at articles that are
             # not in the archive (seen on a 2020 Gutenberg ZIM). Fall through to
@@ -392,9 +438,17 @@ class KiwixRetrievalEngine:
             article_text=full_text,
         )
 
-    def _answer_from_full_text(self, keyword: str) -> Optional[KiwixAnswer]:
-        """Fall back to the Xapian full-text index."""
-        results = self._search_scoped(keyword)
+    def _answer_from_full_text(
+        self, keyword: str, expires: float = 0.0
+    ) -> Optional[KiwixAnswer]:
+        """Fall back to the Xapian full-text index.
+
+        Skipped once the deadline has passed: this path is the slow one (measured
+        6-26s cold on a large ZIM), so entering it late guarantees a wasted answer.
+        """
+        if self._expired(expires):
+            return None
+        results = self._search_scoped(keyword, expires)
         if not results:
             return None
 
@@ -403,7 +457,9 @@ class KiwixRetrievalEngine:
             return None
 
         result, confidence = best
-        summary, full_text = self._summarize(result)
+        if self._expired(expires):
+            return None
+        summary, full_text = self._summarize(result, expires)
         if not summary:
             return None
 
@@ -416,7 +472,9 @@ class KiwixRetrievalEngine:
             article_text=full_text,
         )
 
-    def _search_scoped(self, keyword: str) -> List[SearchResult]:
+    def _search_scoped(
+        self, keyword: str, expires: float = 0.0
+    ) -> List[SearchResult]:
         """Run the scoped search, converting transport failures into no-answer.
 
         A stale book slug is the expected failure here — slugs embed dates
@@ -425,7 +483,11 @@ class KiwixRetrievalEngine:
         degrading into a silent no-answer.
         """
         try:
-            response = self._client.search(pattern=keyword, books=self._book)
+            response = self._client.search(
+                pattern=keyword,
+                books=self._book,
+                timeout=self._remaining(expires),
+            )
         except ValueError as exc:
             # KiwixClient turns any 400 into ValueError; an unknown slug is a config
             # error worth surfacing, not a missing answer.
@@ -522,17 +584,21 @@ class KiwixRetrievalEngine:
         span = ceiling - tuning.concise_words
         return 1.0 - (word_count - tuning.concise_words) / span
 
-    def _summarize(self, result: SearchResult) -> Tuple[str, str]:
+    def _summarize(
+        self, result: SearchResult, expires: float = 0.0
+    ) -> Tuple[str, str]:
         """Fetch the article and reduce it to a short spoken lead.
 
         Falls back to the search snippet when the article cannot be fetched — snippets
         read poorly (they are keyword-in-context fragments) but beat silence when we
         already know the title is a strong match.
         """
-        summary, full_text = self._summarize_url(result.url)
+        summary, full_text = self._summarize_url(result.url, expires)
         return (summary or self._trim(result.snippet)), full_text
 
-    def _summarize_url(self, url: str) -> Tuple[str, str]:
+    def _summarize_url(
+        self, url: str, expires: float = 0.0
+    ) -> Tuple[str, str]:
         """Fetch an article URL and return ``(spoken_summary, full_prose)``.
 
         Both are returned so callers can offer a "tell me more" continuation without
@@ -544,7 +610,9 @@ class KiwixRetrievalEngine:
         like success until you notice there are no paragraphs.
         """
         try:
-            html = self._client.fetch_article(url)
+            html = self._client.fetch_article(
+                url, timeout=self._remaining(expires)
+            )
         except (httpx.TimeoutException, httpx.HTTPError):
             return "", ""
         text = extract_article_text(html)
