@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.1](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.5.0...v1.5.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* bound total answer time and strip trailing verbs from keywords ([aa7f477](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/aa7f477590cf9193625bc77e809827fdc188faea))
+* bound total answer time and strip trailing verbs from keywords ([4695822](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/46958229b848a6cc9d2cc5fc4fceb32c0536d51e))
+* honour top-level tuning keys alongside a books list ([3b3626d](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/3b3626dfdb29e4454f02627b8f9387efd13335dd))
+* honour top-level tuning keys and document the common_query budget ([9950f45](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/9950f455c50990872b45c9e759b00514c9c09318))
+
+
+### Documentation
+
+* lead with bare book slugs and document the query budget ([9c9599f](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/9c9599fe8c849b082d94bb753c1b59b1fd582b0c))
+
 ## [1.5.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.4.1...v1.5.0) (2026-07-30)
 
 
