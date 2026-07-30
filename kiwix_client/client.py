@@ -99,6 +99,7 @@ class KiwixClient:
         pattern: str,
         books: str = "",
         start: int = 0,
+        timeout: Optional[float] = None,
     ) -> SearchResponse:
         """Full-text search across all books or a specific book slug.
 
@@ -123,7 +124,10 @@ class KiwixClient:
         if books:
             params["books.name"] = books
 
-        resp = self._client.get(f"{self._base_url}/search", params=params)
+        kwargs = {"timeout": timeout} if timeout is not None else {}
+        resp = self._client.get(
+            f"{self._base_url}/search", params=params, **kwargs
+        )
 
         if resp.status_code == 400:
             raise ValueError(
@@ -140,7 +144,11 @@ class KiwixClient:
     # ------------------------------------------------------------------
 
     def suggest(
-        self, term: str, book: str, count: int = DEFAULT_SUGGEST_COUNT
+        self,
+        term: str,
+        book: str,
+        count: int = DEFAULT_SUGGEST_COUNT,
+        timeout: Optional[float] = None,
     ) -> List[Suggestion]:
         """Look up article titles matching ``term`` in ``book``.
 
@@ -154,7 +162,10 @@ class KiwixClient:
         Returns an empty list when the server has no title index for the book.
         """
         params = {"term": term, "content": book, "count": str(count)}
-        resp = self._client.get(f"{self._base_url}/suggest", params=params)
+        kwargs = {"timeout": timeout} if timeout is not None else {}
+        resp = self._client.get(
+            f"{self._base_url}/suggest", params=params, **kwargs
+        )
         if resp.status_code == 404:
             return []
         resp.raise_for_status()
@@ -181,7 +192,9 @@ class KiwixClient:
     # Article fetch
     # ------------------------------------------------------------------
 
-    def fetch_article(self, relative_url: str) -> str:
+    def fetch_article(
+        self, relative_url: str, timeout: Optional[float] = None
+    ) -> str:
         """Fetch an article by its relative URL and return raw HTML.
 
         Parameters
@@ -189,7 +202,11 @@ class KiwixClient:
         relative_url:
             Relative URL as returned by :meth:`search`, e.g.
             ``/book_slug/A/Article_Title``.
+        timeout:
+            Override the client timeout for this request, so a caller working to a
+            deadline can cap it to the time actually remaining.
         """
-        resp = self._client.get(self._origin + relative_url)
+        kwargs = {"timeout": timeout} if timeout is not None else {}
+        resp = self._client.get(self._origin + relative_url, **kwargs)
         resp.raise_for_status()
         return resp.text

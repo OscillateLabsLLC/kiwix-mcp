@@ -6,6 +6,7 @@ These encode behaviour measured against a live Kiwix server, where naive
 from __future__ import annotations
 
 import json
+import time
 
 import httpx
 import pytest
@@ -56,6 +57,31 @@ def test_extract_keyword_strips_framing(utterance, expected):
 # ---------------------------------------------------------------------------
 # Construction
 # ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "utterance,expected",
+    [
+        # The subject is the article title, so a trailing verb guarantees a
+        # title-index miss. Measured on a live server: "when did john candy die"
+        # extracted "john candy die" and returned zero suggestions.
+        ("when did john candy die", "john candy"),
+        ("when did the renaissance begin", "the renaissance"),
+        ("when was mel brooks born", "mel brooks"),
+        ("when did world war two end", "world war two"),
+        ("when did apollo 11 launch", "apollo 11"),
+        # A bare verb must survive rather than trimming to nothing: the framing
+        # pattern matches here, leaving only the verb, and an empty keyword would
+        # make the engine decline instead of searching.
+        ("who is born", "born"),
+        # No framing pattern matches, so the utterance passes through untouched.
+        ("who died", "who died"),
+        # Nouns that merely look verb-adjacent are untouched.
+        ("what is the closed timelike curve", "closed timelike curve"),
+    ],
+)
+def test_extract_keyword_drops_trailing_verbs(utterance, expected):
+    assert extract_keyword(utterance) == expected
+
 
 def test_engine_requires_a_book():
     """Search is scoped per-book; an empty scope is a configuration error."""
@@ -493,6 +519,51 @@ def test_ranking_weights_are_validated():
         AnswerTuning(recall_weight=-1.0)
     with pytest.raises(ValueError, match="at least one"):
         AnswerTuning(recall_weight=0, precision_weight=0, concision_weight=0)
+
+
+@respx.mock
+def test_deadline_skips_the_slow_full_text_path():
+    """Once the budget is gone, entering full-text guarantees a wasted answer:
+    measured 6-26s cold on a large ZIM, against a common_query window that collapses
+    to ~2s. /search is left unmocked so respx raises if it is called."""
+    respx.get(f"{BASE}/suggest").mock(
+        side_effect=lambda request: (time.sleep(0.2), httpx.Response(200, text="[]"))[1]
+    )
+    engine = KiwixRetrievalEngine(
+        KiwixClient(BASE), book=BOOK, tuning=AnswerTuning(deadline=0.05)
+    )
+    assert engine.search("water filter") is None
+
+
+@respx.mock
+def test_deadline_of_zero_disables_the_ceiling():
+    """A deployment with a generous common_query window can opt out."""
+    respx.get(f"{BASE}/suggest").mock(return_value=httpx.Response(200, text="[]"))
+    respx.get(f"{BASE}/search").mock(
+        return_value=httpx.Response(
+            200,
+            text=_search_html(("/b/A/Water_filter", "Water filter", "snip", 1_228)),
+        )
+    )
+    respx.get(f"{BASE}/b/A/Water_filter").mock(
+        return_value=httpx.Response(
+            200,
+            text='<html><body><div id="mw-content-text"><p>A water filter removes '
+                 "impurities from water using a fine physical barrier or a chemical "
+                 "process.</p></div></body></html>",
+        )
+    )
+    engine = KiwixRetrievalEngine(
+        KiwixClient(BASE), book=BOOK, tuning=AnswerTuning(deadline=0)
+    )
+    answer = engine.search("water filter")
+    assert answer is not None
+    assert "impurities" in answer.summary
+
+
+def test_deadline_is_validated():
+    with pytest.raises(ValueError, match="deadline"):
+        AnswerTuning(deadline=-1)
 
 
 def test_tuning_rejects_impossible_thresholds():
