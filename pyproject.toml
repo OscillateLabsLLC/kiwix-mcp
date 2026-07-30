@@ -9,7 +9,11 @@ description = "MCP server and client library for Kiwix HTTP servers"
 requires-python = ">=3.10"
 dependencies = [
     "httpx>=0.27",
-    "mcp>=1.26",
+    # Capped at <2: mcp 2.0.0 removed mcp.server.fastmcp, which server.py imports.
+    # FastMCP was replaced by mcp.server.mcpserver.MCPServer; porting to that API is
+    # a separate change. Without this cap a fresh `pip install` takes 2.x and fails
+    # at import, even though uv.lock resolves 1.27.0.
+    "mcp>=1.26,<2",
     "defusedxml>=0.7",
     "beautifulsoup4>=4.12",
     "lxml>=5.0",

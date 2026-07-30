@@ -636,7 +636,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "kiwix-mcp", extras = ["ovos"], marker = "extra == 'skill'" },
     { name = "lxml", specifier = ">=5.0" },
-    { name = "mcp", specifier = ">=1.26" },
+    { name = "mcp", specifier = ">=1.26,<2" },
     { name = "ovos-bus-client", marker = "extra == 'skill'", specifier = ">=0.0.8,<2.0.0" },
     { name = "ovos-plugin-manager", marker = "extra == 'ovos'", specifier = ">=0.9.0,<1.0.0" },
     { name = "ovos-utils", marker = "extra == 'ovos'", specifier = ">=0.3.0,<1.0.0" },
