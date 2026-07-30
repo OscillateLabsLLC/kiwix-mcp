@@ -1,0 +1,28 @@
+name: build-and-push
+# kiwix-mcp — python:3.13-alpine multi-stage MCP server (light). This is the
+# Forgejo Actions build for the graywind cluster image; the repo also keeps its
+# GitHub Actions (.github/) for upstream release-please. Registry unauthenticated.
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build-and-push:
+    runs-on: docker
+    container:
+      image: catthehacker/ubuntu:act-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Compute image tag
+        id: tags
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "date_sha=${DATE}-${SHA}" >> "$GITHUB_OUTPUT"
+      - name: Build and push
+        run: |
+          IMAGE=docker.graywind.org/kiwix-mcp
+          docker buildx build --push \
+            --tag "${IMAGE}:${{ steps.tags.outputs.date_sha }}" \
+            --tag "${IMAGE}:latest" .
