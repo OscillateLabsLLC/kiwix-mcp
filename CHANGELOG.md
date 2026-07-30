@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.5.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.4.1...v1.5.0) (2026-07-30)
+
+
+### Features
+
+* add /suggest title-index lookup to KiwixClient ([38cd0c3](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/38cd0c31ea80bcbb94952ba36e9bf13da7a5fb94))
+* add OVOS/Neon CommonQuery skill ([3813cc9](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/3813cc93845ff191166f7e9fcf106e4296ba2b75))
+* add OVOS/Neon question solver backed by Kiwix ([0a579df](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/0a579dfa5723836b6a3cf4366c20e60d4a6d7873))
+* answer from several explicitly configured books ([1a46bb3](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/1a46bb31e4c16b11d8501e725c719eb721a657bc))
+* OVOS/Neon integration for Kiwix, plus three client bug fixes ([713848c](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/713848c760c37d0676bc45cd03ece28e6564ac73))
+
+
+### Bug Fixes
+
+* cap mcp below 2.0 so a fresh install still imports ([ea18747](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/ea18747078ae98cb456c81572e1c5b619b0d668f))
+* drop script and style contents when stripping HTML ([c8c9711](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/c8c97119ad4984dc70562717001be0a171c06495))
+* extract article prose instead of all page text ([c138d20](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/c138d2008b9ff0f5e2a1fc04a3497d048b58c3f9))
+* follow HTTP redirects when fetching articles ([21b674f](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/21b674f89abab4d435afa00afc22036a322bd025))
+* honour lang, arm follow-ups, and cache fetched articles ([fb55efa](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/fb55efaaefff8c7e926fd7f56ae6b77ca1c7d6d5))
+
+
+### Documentation
+
+* record the resolved skill contract and deployment config ([83f8088](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/83f80880a74fe27d06c0849b59feff34a950a645))
+
 ## [1.4.1](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.4.0...v1.4.1) (2026-05-29)
 
 
