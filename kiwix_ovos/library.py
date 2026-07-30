@@ -150,13 +150,22 @@ def books_from_config(config: Dict) -> List[BookConfig]:
     if not entries:
         single = config.get("book")
         if not single:
+            # Name the keys we actually received: the usual cause is a nested or
+            # misspelled settings file, and "no books configured" alone sends the
+            # reader looking in the wrong place.
+            seen = sorted(k for k in config if not k.startswith("__"))
             raise ValueError(
                 "configure at least one book: set 'books' (a list) or 'book' (a "
-                "single slug). kiwix-serve scopes search per-book."
+                "single slug) at the top level of the settings file. kiwix-serve "
+                f"scopes search per-book. Keys found instead: {seen or 'none'}"
             )
         entries = [{"book": single, **_tuning_keys(config)}]
     if isinstance(entries, str):
         entries = [{"book": entries}]
+
+    # Top-level tuning keys are defaults for every book; a book entry overrides them.
+    # Without this, `{"timeout": 2.5, "books": [...]}` silently ignored the timeout.
+    defaults = _tuning_keys(config)
 
     books: List[BookConfig] = []
     for entry in entries:
@@ -165,8 +174,8 @@ def books_from_config(config: Dict) -> List[BookConfig]:
         books.append(
             BookConfig(
                 book=entry.get("book", ""),
-                base_url=entry.get("base_url"),
-                tuning=_tuning_from_entry(entry),
+                base_url=entry.get("base_url", config.get("base_url")),
+                tuning=_tuning_from_entry({**defaults, **entry}),
                 lang=entry.get("lang"),
             )
         )
