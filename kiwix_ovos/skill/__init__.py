@@ -7,7 +7,8 @@ the ``@common_query`` decorator, which does not exist in this release.
 All retrieval lives in :mod:`kiwix_ovos.library`, which has no OVOS imports; this
 module is the thin voice layer over it.
 """
-from os.path import dirname
+import re
+import time
 from typing import Dict, List, Optional, Tuple
 
 from ovos_utils import classproperty
@@ -27,6 +28,17 @@ _EXACT_MATCH_CONFIDENCE = 0.9
 
 #: Below this the answer is a weak topical match rather than a real answer.
 _CATEGORY_MATCH_CONFIDENCE = 0.6
+
+_RE_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+
+#: Cap on queued follow-up sentences. Articles run to thousands of sentences and
+#: nobody says "tell me more" a hundred times; this bounds per-session memory.
+_MAX_CONTINUATION_SENTENCES = 40
+
+#: How long a session's follow-up queue survives without use. Refreshed on every
+#: "tell me more", so an active conversation never expires mid-topic; this only
+#: reclaims state from sessions that walked away.
+_SESSION_TTL_SECONDS = 30 * 60
 
 
 class KiwixSkill(CommonQuerySkill):
@@ -54,7 +66,8 @@ class KiwixSkill(CommonQuerySkill):
 
     def initialize(self):
         self._library: Optional[KiwixLibrary] = None
-        self._sessions: Dict[str, List[str]] = {}
+        # session_id -> (remaining_sentences, last_used_monotonic)
+        self._sessions: Dict[str, tuple] = {}
         self._reload_library()
         self.settings_change_callback = self._reload_library
 
@@ -105,12 +118,29 @@ class KiwixSkill(CommonQuerySkill):
             phrase,
             self._match_level(answer.confidence),
             answer.summary,
-            {"book": answer.book, "title": answer.title, "url": answer.url},
+            {
+                "book": answer.book,
+                "title": answer.title,
+                # Carried so CQS_action can arm follow-ups without re-querying.
+                "url": answer.url,
+            },
         )
 
     def CQS_action(self, phrase: str, data: Dict) -> None:
-        """Record the winning answer so "tell me more" has something to continue."""
+        """Arm "tell me more" once this skill wins the contest.
+
+        Only the winner should arm follow-ups — doing this in
+        CQS_match_query_phrase would let a losing skill's answer be continued.
+
+        The framework speaks the whole summary before calling this
+        (``self.speak(data["answer"])``), so the continuation is the article text
+        *after* the summary, not the summary's own remaining sentences.
+        """
         LOG.debug(f"Kiwix answered from {data.get('book')}: {data.get('title')}")
+        spoken = data.get("answer") or ""
+        self._queue_continuation(
+            self._continuation(data.get("url", ""), spoken, data.get("book", ""))
+        )
 
     @staticmethod
     def _match_level(confidence: float) -> CQSMatchLevel:
@@ -144,15 +174,44 @@ class KiwixSkill(CommonQuerySkill):
     @intent_handler("tell_more.intent")
     def handle_tell_more(self, _message):
         """Continue the last answer one sentence at a time."""
-        remaining = self._sessions.get(self._session_id)
+        remaining = self._take_continuation()
         if not remaining:
             self.speak_dialog("nothing_more")
             return
-        self.speak(remaining.pop(0))
+        self.speak(remaining)
 
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
+
+    def _queue_continuation(self, sentences: List[str]) -> None:
+        """Arm follow-ups for this session, expiring other sessions' stale state.
+
+        Sessions come and go without telling us, so state is evicted by age rather
+        than left to grow for the process lifetime.
+        """
+        now = time.monotonic()
+        self._sessions = {
+            key: value for key, value in self._sessions.items()
+            if now - value[1] <= _SESSION_TTL_SECONDS
+        }
+        self._sessions[self._session_id] = (list(sentences), now)
+
+    def _take_continuation(self) -> str:
+        """Pop the next follow-up sentence, refreshing this session's freshness.
+
+        Refresh-on-read matters: a listener working steadily through "tell me more"
+        must not have their place expire out from under them mid-topic.
+        """
+        entry = self._sessions.get(self._session_id)
+        if not entry:
+            return ""
+        sentences, _ = entry
+        if not sentences:
+            return ""
+        spoken = sentences.pop(0)
+        self._sessions[self._session_id] = (sentences, time.monotonic())
+        return spoken
 
     @property
     def _session_id(self) -> str:
@@ -165,19 +224,61 @@ class KiwixSkill(CommonQuerySkill):
             return "default"
 
     def _search(self, query: str) -> Optional[KiwixAnswer]:
-        """Query the library, never raising into the skill framework."""
+        """Query the library, never raising into the skill framework.
+
+        ``self.lang`` is the session's language; the library uses it to skip books
+        that answer in another language, since ZIMs are single-language and
+        answering an Italian question from an English Wikipedia is worse than
+        declining.
+        """
         if self._library is None:
             return None
         try:
-            return self._library.search(query)
+            return self._library.search(query, lang=self._lang)
         except Exception as exc:  # defensive: transport/parse failure
             LOG.warning(f"Kiwix skill failed to answer {query!r}: {exc}")
             return None
 
+    @property
+    def _lang(self) -> Optional[str]:
+        """Session language, or None when it cannot be determined."""
+        try:
+            return self.lang
+        except Exception:
+            return None
+
     def _remember(self, answer: KiwixAnswer) -> None:
-        """Stash the answer's remaining sentences for "tell me more"."""
+        """Stash the answer's remaining sentences for "tell me more".
+
+        Used by the explicit intent, which speaks one sentence at a time. The
+        CommonQuery path differs: the framework speaks the whole summary, so
+        :meth:`CQS_action` continues past it instead.
+        """
         sentences = answer.sentences()
-        self._sessions[self._session_id] = sentences[1:] if sentences else []
+        self._queue_continuation(sentences[1:] if sentences else [])
+
+    def _continuation(self, url: str, already_spoken: str, book: str = "") -> List[str]:
+        """Sentences of the article that follow what was already said.
+
+        Re-fetches rather than caching the full article: the answer summary is
+        deliberately short, and holding whole articles per session would grow
+        without bound.
+        """
+        if not url or self._library is None:
+            return []
+        try:
+            text = self._library.article_text(url, book)
+        except Exception as exc:  # defensive: transport/parse failure
+            LOG.debug(f"Kiwix skill could not load a continuation: {exc}")
+            return []
+        if not text:
+            return []
+
+        remainder = text[len(already_spoken):] if text.startswith(
+            already_spoken
+        ) else text
+        sentences = [s.strip() for s in _RE_SENTENCE.split(remainder) if s.strip()]
+        return sentences[:_MAX_CONTINUATION_SENTENCES]
 
 
 class _LoggingLibrary(KiwixLibrary):

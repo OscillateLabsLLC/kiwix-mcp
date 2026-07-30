@@ -14,6 +14,8 @@ import respx
 
 from kiwix_ovos.engine import AnswerTuning
 from kiwix_ovos.library import (
+    _ARTICLE_CACHE_SIZE,
+    _ARTICLE_TTL_SECONDS,
     BookConfig,
     KiwixLibrary,
     books_from_config,
@@ -36,7 +38,13 @@ def _suggest(title: str, path: str) -> str:
 
 
 def _article(text: str) -> str:
-    return f'<html><body><div id="mw-content-text"><p>{text}</p></div></body></html>'
+    """Wrap prose as a Kiwix article page.
+
+    Padded to clear extract_article_text()'s 60-character paragraph floor — short
+    fixtures extract to "" and make cache assertions pass vacuously.
+    """
+    padded = f"{text} This sentence pads the paragraph past the prose floor."
+    return f'<html><body><div id="mw-content-text"><p>{padded}</p></div></body></html>'
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +114,174 @@ def test_per_book_base_url_overrides_the_library_default():
         base_url=BASE,
     )
     assert library.books == ["a", "b"]
+
+
+# ---------------------------------------------------------------------------
+# Article cache
+# ---------------------------------------------------------------------------
+
+class _Clocked(KiwixLibrary):
+    """Library with a controllable clock, for exercising cache expiry."""
+
+    now = 0.0
+
+    def _clock(self) -> float:
+        return self.now
+
+
+@respx.mock
+def test_article_is_fetched_once_and_then_cached():
+    """The continuation normally re-fetches the article the answer came from —
+    measured at 0.188s on top of a 0.311s answer, pure duplicate work."""
+    route = respx.get(f"{BASE}/b/A/Newton").mock(
+        return_value=httpx.Response(200, text=_article("Newton was a physicist."))
+    )
+    library = KiwixLibrary([BookConfig(book="b")], base_url=BASE)
+
+    first = library.article_text("/b/A/Newton", "b")
+    second = library.article_text("/b/A/Newton", "b")
+
+    assert first == second
+    assert route.call_count == 1, "article was fetched twice despite the cache"
+
+
+@respx.mock
+def test_reading_a_cached_article_refreshes_it():
+    """Refresh-on-read is what stops the assistant developing amnesia mid-topic: a
+    listener working through "tell me more" must not lose their article because
+    other questions were asked in between."""
+    respx.get(f"{BASE}/b/A/Newton").mock(
+        return_value=httpx.Response(200, text=_article("Newton was a physicist."))
+    )
+    respx.get(f"{BASE}/b/A/Other").mock(
+        return_value=httpx.Response(200, text=_article("Something else entirely."))
+    )
+    route = respx.get(f"{BASE}/b/A/Newton").mock(
+        return_value=httpx.Response(200, text=_article("Newton was a physicist."))
+    )
+    library = _Clocked([BookConfig(book="b")], base_url=BASE)
+
+    library.article_text("/b/A/Newton", "b")
+    # Read it repeatedly, each time most of a TTL later. Total elapsed time far
+    # exceeds the TTL, so this only survives if *every* read pushes expiry back —
+    # not merely the first one.
+    for _ in range(5):
+        library.now += _ARTICLE_TTL_SECONDS * 0.9
+        assert library.article_text("/b/A/Newton", "b"), "article expired while in use"
+
+    assert route.call_count == 1, (
+        "article was re-fetched, so a read did not refresh its expiry"
+    )
+
+
+@respx.mock
+def test_idle_article_expires():
+    """Only genuinely abandoned entries are reclaimed."""
+    route = respx.get(f"{BASE}/b/A/Newton").mock(
+        return_value=httpx.Response(200, text=_article("Newton was a physicist."))
+    )
+    library = _Clocked([BookConfig(book="b")], base_url=BASE)
+
+    library.article_text("/b/A/Newton", "b")
+    library.now += _ARTICLE_TTL_SECONDS + 1
+    library.article_text("/b/A/Newton", "b")
+
+    assert route.call_count == 2, "expired article should have been re-fetched"
+
+
+@respx.mock
+def test_cache_is_bounded():
+    """Wikipedia articles run to hundreds of KB; the cache must not grow forever."""
+    for i in range(_ARTICLE_CACHE_SIZE + 5):
+        respx.get(f"{BASE}/b/A/{i}").mock(
+            return_value=httpx.Response(
+                200, text=_article(f"Article number {i} is about something.")
+            )
+        )
+    library = KiwixLibrary([BookConfig(book="b")], base_url=BASE)
+    for i in range(_ARTICLE_CACHE_SIZE + 5):
+        library.article_text(f"/b/A/{i}", "b")
+
+    assert len(library._articles) <= _ARTICLE_CACHE_SIZE
+
+
+# ---------------------------------------------------------------------------
+# Language scoping
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("slug,expected", [
+    ("wikipedia_en_all_maxi_2024-01", "en"),
+    ("gutenberg_fr_all_2020-10", "fr"),
+    ("edutechwiki_fr_all_maxi_2021-03", "fr"),
+    ("nhs.uk_en_medicines_2025-09", "en"),
+    ("3dprinting.stackexchange.com_en_all_2025-08", "en"),
+    # "mul" marks multilingual ZIMs, not a language.
+    ("ted_mul_farming_2024-10", None),
+    # No language field at all; must not guess.
+    ("pdzim_2025-04", None),
+])
+def test_language_is_inferred_from_the_slug(slug, expected):
+    assert BookConfig(book=slug).lang == expected
+
+
+@pytest.mark.parametrize("given", [
+    "en-US", "en-us", "en_US", "en-UK", "en-uk", "EN", "en", "  en-GB  ",
+])
+def test_locale_variants_normalize_to_the_primary_subtag(given):
+    """OVOS passes locale tags in several shapes; all must match an 'en' book."""
+    assert BookConfig(book="pdzim_2025-04", lang=given).lang == "en"
+
+
+def test_only_books_in_the_requested_language_are_queried():
+    """ZIMs are single-language. Answering an Italian question from an English
+    Wikipedia is worse than declining."""
+    library = KiwixLibrary(
+        [
+            BookConfig(book="wikipedia_en_all_maxi_2024-01"),
+            BookConfig(book="gutenberg_fr_all_2020-10"),
+        ],
+        base_url=BASE,
+    )
+    assert [e.book for e in library.engines_for_lang("en-US")] == [
+        "wikipedia_en_all_maxi_2024-01"
+    ]
+    assert [e.book for e in library.engines_for_lang("fr-FR")] == [
+        "gutenberg_fr_all_2020-10"
+    ]
+
+
+def test_books_of_unknown_language_stay_eligible():
+    """Excluding a book on a failed inference would silently drop a working corpus."""
+    library = KiwixLibrary(
+        [
+            BookConfig(book="wikipedia_en_all_maxi_2024-01"),
+            BookConfig(book="ted_mul_farming_2024-10"),
+        ],
+        base_url=BASE,
+    )
+    assert "ted_mul_farming_2024-10" in [
+        e.book for e in library.engines_for_lang("fr")
+    ]
+
+
+def test_no_matching_language_falls_back_to_every_book():
+    """A deployment whose books are all tagged differently from the assistant's
+    locale must not go permanently silent."""
+    library = KiwixLibrary(
+        [BookConfig(book="gutenberg_fr_all_2020-10")], base_url=BASE
+    )
+    assert len(library.engines_for_lang("de")) == 1
+
+
+def test_no_language_given_queries_everything():
+    library = KiwixLibrary(
+        [
+            BookConfig(book="wikipedia_en_all_maxi_2024-01"),
+            BookConfig(book="gutenberg_fr_all_2020-10"),
+        ],
+        base_url=BASE,
+    )
+    assert len(library.engines_for_lang(None)) == 2
 
 
 # ---------------------------------------------------------------------------

@@ -71,7 +71,7 @@ class KiwixSolver(QuestionSolver):
         Declining is a first-class outcome: in a common_query contest, silence beats
         speaking an article that merely mentions the subject.
         """
-        answer = self._answer(query)
+        answer = self._answer(query, lang)
         return answer.summary if answer else None
 
     def get_data(
@@ -80,7 +80,7 @@ class KiwixSolver(QuestionSolver):
         lang: Optional[str] = None,
         units: Optional[str] = None,
     ) -> Optional[Dict[str, str]]:
-        answer = self._answer(query)
+        answer = self._answer(query, lang)
         if not answer:
             return None
         return {
@@ -97,7 +97,7 @@ class KiwixSolver(QuestionSolver):
         units: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """Sentence-by-sentence steps backing "tell me more"."""
-        answer = self._answer(query)
+        answer = self._answer(query, lang)
         if not answer:
             return []
         return [
@@ -109,7 +109,9 @@ class KiwixSolver(QuestionSolver):
     # Internals
     # ------------------------------------------------------------------
 
-    def _answer(self, query: str) -> Optional[KiwixAnswer]:
+    def _answer(
+        self, query: str, lang: Optional[str] = None
+    ) -> Optional[KiwixAnswer]:
         """Return the best answer across configured books, or None.
 
         The solver must never raise into the common_query path — one misconfigured
@@ -117,7 +119,7 @@ class KiwixSolver(QuestionSolver):
         are contained by the library and logged there.
         """
         try:
-            return self._library.search(query)
+            return self._library.search(query, lang=lang)
         except Exception as exc:  # defensive: unexpected transport/parse failure
             LOG.warning(f"KiwixSolver failed to answer {query!r}: {exc}")
             return None

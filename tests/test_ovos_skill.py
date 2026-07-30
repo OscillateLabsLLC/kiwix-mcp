@@ -151,6 +151,52 @@ def test_transport_failure_declines_rather_than_raising():
 # ---------------------------------------------------------------------------
 
 @respx.mock
+def test_cqs_action_arms_tell_me_more():
+    """Previously CQS_action only logged, so "tell me more" after a common-query
+    answer replied "that is all I have" while article text remained unread.
+
+    Needs an article longer than the summary budget — otherwise the summary covers
+    the whole article and there is legitimately nothing to continue with.
+    """
+    tail = " ".join(
+        f"Newton also investigated topic number {i} in considerable depth "
+        f"during his later years at Cambridge." for i in range(30)
+    )
+    respx.get(f"{BASE}/suggest").mock(
+        return_value=httpx.Response(200, text=_suggest("Isaac Newton", "A/Newton"))
+    )
+    respx.get(f"{BASE}/{BOOK}/A/Newton").mock(
+        return_value=httpx.Response(
+            200,
+            text='<html><body><div id="mw-content-text"><p>Sir Isaac Newton was '
+                 "an English mathematician and physicist who formulated the laws of "
+                 f"motion and universal gravitation. {tail}</p></div></body></html>",
+        )
+    )
+    skill = _configured()
+    result = skill.CQS_match_query_phrase("who is Isaac Newton")
+    assert result is not None
+
+    _, _, answer, callback = result
+    callback["answer"] = answer  # the framework injects this before CQS_action
+    skill.CQS_action("who is Isaac Newton", callback)
+
+    queued, _ = skill._sessions[skill._session_id]
+    assert queued, "no follow-up queued after winning the contest"
+    # The framework speaks the whole summary, so the continuation must go past it.
+    assert not any(sentence in answer for sentence in queued)
+
+
+@respx.mock
+def test_cqs_action_without_a_url_queues_nothing():
+    """A missing URL is not a crash; it just means no continuation."""
+    _mock_answer()
+    skill = _configured()
+    skill.CQS_action("who is Isaac Newton", {"answer": "spoken", "book": BOOK})
+    assert skill._sessions[skill._session_id][0] == []
+
+
+@respx.mock
 def test_remember_stores_remaining_sentences_for_tell_me_more():
     """The first sentence is spoken immediately, so only the rest is queued."""
     _mock_answer()
@@ -159,7 +205,7 @@ def test_remember_stores_remaining_sentences_for_tell_me_more():
     assert answer is not None
 
     skill._remember(answer)
-    queued = skill._sessions[skill._session_id]
+    queued, _ = skill._sessions[skill._session_id]
     assert queued
     assert "reflecting telescope" in " ".join(queued)
     assert not any(q.startswith("Sir Isaac Newton was") for q in queued)
