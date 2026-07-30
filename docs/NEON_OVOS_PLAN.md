@@ -241,16 +241,47 @@ pip install 'kiwix-mcp[skill]'
 
 Skill settings (`~/.config/mycroft/skills/kiwix-mcp.oscillatelabsllc/settings.json`):
 
+Books are bare slugs in the common case:
+
 ```json
 {
   "base_url": "http://prepdisk.graywind.org:3000/kiwix",
+  "timeout": 2.5,
+  "books": ["wikipedia_en_all_maxi_2024-01", "mdwiki_en_all_2024-06"]
+}
+```
+
+Use an object only for a book that needs an override; the two forms mix freely:
+
+```json
+{
+  "base_url": "http://prepdisk.graywind.org:3000/kiwix",
+  "timeout": 2.5,
   "books": [
-    {"book": "wikipedia_en_all_maxi_2024-01"},
+    "wikipedia_en_all_maxi_2024-01",
     {"book": "wikihow_en_maxi_2023-03", "preset": "how_to"},
-    {"book": "mdwiki_en_all_2024-06"},
     {"book": "gutenberg_en_all_2023-08", "preset": "long_form"}
   ]
 }
+```
+
+Top-level tuning keys (`timeout`, `summary_chars`, …) are defaults for every book;
+per-book entries override them. `base_url` works the same way, so a deployment
+spanning several servers only names the exception.
+
+### Mind the common_query budget
+
+`ovos_commonqa` enforces `max_response_wait: 4` seconds — a hard ceiling, with each
+`searching` heartbeat buying only `extension_time: 1` more second. The engine's own
+`timeout` default is **5.0s**, i.e. longer than the whole budget, so a slow book
+answers after the arbitrator has already chosen. Set `timeout` under 4s (2.5 is a
+reasonable start) so a slow book declines instead of answering late.
+
+To give Kiwix more room instead, raise the ceiling in `mycroft.conf` — note the
+nesting is `intents.common_query`:
+
+```json
+{"intents": {"common_query": {"max_response_wait": 8, "extension_time": 2}}}
 ```
 
 Presets: `encyclopedia` (default), `how_to` (descriptive titles like "4 Ways to Purify
