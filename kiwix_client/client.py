@@ -60,6 +60,23 @@ class KiwixClient:
         # HTTPStatusError on an otherwise valid article.
         self._client = httpx.Client(timeout=timeout, follow_redirects=True)
 
+    def _get(self, url: str, **kwargs) -> httpx.Response:
+        """GET ``url``, naming the unreachable host on connection failure.
+
+        httpx's own message is the bare OS error (``[Errno -2] Name does not
+        resolve``), which hides whether the configured host failed or a host the
+        server redirected to did.
+        """
+        try:
+            return self._client.get(url, **kwargs)
+        except httpx.ConnectError as exc:
+            failed_host = exc.request.url.host
+            configured_host = urlparse(self._base_url).hostname
+            detail = f"cannot connect to {failed_host}"
+            if failed_host != configured_host:
+                detail += f" (redirected from {configured_host})"
+            raise httpx.ConnectError(f"{detail}: {exc}", request=exc.request) from exc
+
     def close(self) -> None:
         self._client.close()
 
@@ -84,7 +101,7 @@ class KiwixClient:
         params = {"count": str(CATALOG_PAGE_SIZE), "start": "0"}
         if q:
             params["q"] = q
-        resp = self._client.get(
+        resp = self._get(
             f"{self._base_url}/catalog/v2/entries", params=params
         )
         resp.raise_for_status()
@@ -125,7 +142,7 @@ class KiwixClient:
             params["books.name"] = books
 
         kwargs = {"timeout": timeout} if timeout is not None else {}
-        resp = self._client.get(
+        resp = self._get(
             f"{self._base_url}/search", params=params, **kwargs
         )
 
@@ -163,7 +180,7 @@ class KiwixClient:
         """
         params = {"term": term, "content": book, "count": str(count)}
         kwargs = {"timeout": timeout} if timeout is not None else {}
-        resp = self._client.get(
+        resp = self._get(
             f"{self._base_url}/suggest", params=params, **kwargs
         )
         if resp.status_code == 404:
@@ -207,6 +224,6 @@ class KiwixClient:
             deadline can cap it to the time actually remaining.
         """
         kwargs = {"timeout": timeout} if timeout is not None else {}
-        resp = self._client.get(self._origin + relative_url, **kwargs)
+        resp = self._get(self._origin + relative_url, **kwargs)
         resp.raise_for_status()
         return resp.text

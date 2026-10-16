@@ -110,3 +110,35 @@ def test_search_400_message_references_list_books():
     with pytest.raises(ValueError) as exc_info:
         client.search(pattern="test")
     assert "list_books" in str(exc_info.value)
+
+
+@respx.mock
+def test_connect_error_names_the_configured_host():
+    """Issue #20: a DNS failure surfaced as a bare "[Errno -2] Name does not
+    resolve", with no hint of which host the client could not reach."""
+    respx.get("http://kiwix.example/catalog/v2/entries").mock(
+        side_effect=httpx.ConnectError("[Errno -2] Name does not resolve")
+    )
+    client = KiwixClient("http://kiwix.example")
+    with pytest.raises(httpx.ConnectError, match=r"cannot connect to kiwix\.example: "):
+        client.list_books()
+
+
+@respx.mock
+def test_connect_error_names_the_redirect_target():
+    """A reverse proxy that redirects to an internal hostname fails on the second
+    hop; the message must say so rather than blame the configured host."""
+    respx.get("http://kiwix.example/catalog/v2/entries").mock(
+        return_value=httpx.Response(
+            302, headers={"Location": "http://kiwix-internal/catalog/v2/entries"}
+        )
+    )
+    respx.get("http://kiwix-internal/catalog/v2/entries").mock(
+        side_effect=httpx.ConnectError("[Errno -2] Name does not resolve")
+    )
+    client = KiwixClient("http://kiwix.example")
+    with pytest.raises(
+        httpx.ConnectError,
+        match=r"cannot connect to kiwix-internal \(redirected from kiwix\.example\)",
+    ):
+        client.list_books()
