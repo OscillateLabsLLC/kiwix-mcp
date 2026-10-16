@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.5.2](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.5.1...v1.5.2) (2026-10-16)
+
+
+### Bug Fixes
+
+* **client:** name the unreachable host on connection errors ([3f8b812](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/3f8b8129858d7daae37779298422fb78ee9800e4))
+* **client:** name the unreachable host on connection errors ([ea72553](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/ea72553d0c15826839049b69efed118be8ac8c13)), closes [#20](https://github.com/OscillateLabsLLC/kiwix-mcp/issues/20)
+
 ## [1.5.1](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.5.0...v1.5.1) (2026-07-30)
 
 
