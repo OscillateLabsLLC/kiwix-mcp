@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.5.2...v1.6.0) (2026-11-04)
+
+
+### Features
+
+* publish multi-arch container image to GHCR on release ([71a7ad8](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/71a7ad86148c1b09f9d8f5fc8fa45cf2e7b5f5c9))
+* publish multi-arch container image to GHCR on release ([5b8b97c](https://github.com/OscillateLabsLLC/kiwix-mcp/commit/5b8b97ce3a32c6273631e3c1ee7f7b2b1341d4de))
+
 ## [1.5.2](https://github.com/OscillateLabsLLC/kiwix-mcp/compare/v1.5.1...v1.5.2) (2026-10-16)
 
 
