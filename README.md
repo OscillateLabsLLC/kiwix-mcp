@@ -97,10 +97,12 @@ CORS has no effect on stdio transport.
 
 ### Docker
 
+Multi-arch images (amd64, arm64) are published to GitHub Container Registry on each release, tagged with the release version (e.g. `1.5.2`) and `latest`.
+
 ```bash
 docker run -e KIWIX_BASE_URL=http://your-kiwix-server:8080 \
   -p 8000:8000 \
-  oscillatelabs/kiwix-mcp
+  ghcr.io/oscillatelabsllc/kiwix-mcp
 ```
 
 Defaults to `streamable-http` transport bound on `0.0.0.0:8000`. Override with env vars:
@@ -113,7 +115,7 @@ docker run \
   -e PORT=8000 \
   -e CORS_ALLOW_ORIGINS="http://localhost:3000" \
   -p 8000:8000 \
-  oscillatelabs/kiwix-mcp
+  ghcr.io/oscillatelabsllc/kiwix-mcp
 ```
 
 ## Options
